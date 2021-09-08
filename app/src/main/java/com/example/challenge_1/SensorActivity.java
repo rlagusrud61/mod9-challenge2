@@ -30,6 +30,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
+
 
 public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener {
 
@@ -60,6 +62,21 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     GoogleMap googleMap;
 
+    ArrayList<Float> accel_x = new ArrayList<Float>();
+    ArrayList<Float> accel_y = new ArrayList<Float>();
+    ArrayList<Float> accel_z = new ArrayList<Float>();
+
+    final int dt = 100000;
+
+    private float average(ArrayList<Float> input) {
+        float temp = 0;
+        for (int i=0; i<input.size();i++) {
+            temp += input.get(i);
+        }
+        return temp/input.size();
+    }
+
+
     @Override
     public final void onCreate(Bundle savedInstanceState) {
 
@@ -82,12 +99,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-
-        if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions((Activity) this, new String[]{
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-            }, 10);
-        }
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         lat = location.getLatitude();
@@ -121,7 +132,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(SensorActivity.this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(SensorActivity.this, accelerometer, 100000);
         Log.d(TAG, "OnCreate: Registered accelerometer listener");
     }
 
@@ -143,56 +154,33 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     @Override
     public final void onSensorChanged(SensorEvent event) {
+        float x;
+        float y;
+        float z;
 
-        float x = Math.round(event.values[0]);
-        float y = Math.round(event.values[1]);
-        float z = Math.round(event.values[2]);
+        accel_x.add(event.values[0]);
+        accel_y.add(event.values[1]);
+        accel_z.add(event.values[2]);
 
-        double pitch = Math.round(Math.atan2(-x,Math.sqrt(y*y+z*z)) * 57.3);
-        double roll = Math.round(Math.atan2(y,z) * 57.3);
+        if(accel_x.size() > 5) {
+            accel_x.remove(0);
+            accel_y.remove(0);
+            accel_z.remove(0);
+        }
 
         if (running == true) {
-            Log.d(TAG, "OnSensorChanged: X" + x + " Y:" + y + " Z:" + z);
+            x = average(accel_x);
+            y = average(accel_y);
+            z = average(accel_z);
+            Log.d(TAG, "OnSensorChanged: X:" + x + " Y:" + y + " Z:" + z);
 
             xValue.setText("xValue:" + x);
             yValue.setText("yValue:" + y);
             zValue.setText("zValue:" + z);
 
-            /*
-                Check the position based on the values, and changed the text to say either:
-                Pitch: Y-axis: Tilted Up (positive), Tilted Down (negative)
-                Roll: X-axis: Right (positive), Left (negative)
-                Perfectly level: Pitch and Roll equal to zero
-            */
-
-            if (roll >= 0) {
-                if (pitch >= 0){
-                    if (pitch == 0 && roll == 0) {
-                        position.setText("Perfectly level, pitch:" + pitch + " roll:" + roll);
-                    } else {
-                        position.setText("Tilted Up and to the right, pitch:" + pitch + " roll:" + roll);
-                    }
-                }  else {
-                    position.setText("Tilted Down and to the right, pitch:" + pitch + " roll:" + roll);
-                }
-            } else {
-                if (pitch >=0){
-                    position.setText("Tilted Up and to the Left, pitch:" + pitch + " roll:" + roll);
-                } else{
-                    position.setText("Tilted Down and to the Left, pitch:" + pitch + " roll:" + roll);
-                }
-            }
-
-            /*
-                Check if the phone is in the same location as the one it had 3 seconds ago.
-                Use a Handler
-             */
-
-
-
-
         }
     }
+
 
     @Override
     protected void onResume() {
