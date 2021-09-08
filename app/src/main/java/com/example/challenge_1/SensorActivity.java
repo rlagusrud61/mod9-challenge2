@@ -27,6 +27,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
@@ -54,6 +55,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     double longi = 0; // 6.879420
     LatLng latLng = new LatLng(lat, longi);
     LatLng[] coordinates_total;
+
+    Marker myMarker;
 
     GoogleMap googleMap;
 
@@ -126,7 +129,9 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     public void onLocationChanged(Location location) {
         lat = location.getLatitude();
         longi = location.getLongitude();
-        googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+        float zoomLevel = 5f;
+        myMarker.setPosition(new LatLng(lat, longi));
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel));
         Log.d(TAG, "onLocationChanged: has entered" + lat + " and " + longi);
     }
 
@@ -229,8 +234,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     public void onMapReady(GoogleMap map) {
         // ONCE YOU HAVE THE COORDINATES, YOU CAN ADD MANY MARKERS
         googleMap = map;
-        float zoomLevel = 5f;
-        googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+        float zoomLevel = 1f;
+        myMarker = googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel));
 
         Log.d(TAG, "onMapReady: has entered");
