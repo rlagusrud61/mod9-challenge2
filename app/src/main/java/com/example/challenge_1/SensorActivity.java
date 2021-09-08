@@ -1,5 +1,6 @@
 package com.example.challenge_1;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -41,7 +42,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     // Handle location changes
     private LocationListener locationListener;
 
-    TextView xValue, yValue, zValue;
+    TextView xValue, yValue, zValue, position, movement_Check;
 
     // If app is running or if its on pause
     Boolean running = true;
@@ -49,41 +50,45 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    double lat = 52.213453; // 52.213453
-    double longi = 6.879420; // 6.879420
-    LatLng latLng = new LatLng (lat, longi);
+    double lat = 0; // 52.213453
+    double longi = 0; // 6.879420
+    LatLng latLng = new LatLng(lat, longi);
     LatLng[] coordinates_total;
+
+    GoogleMap googleMap;
 
     @Override
     public final void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         xValue = (TextView) findViewById(R.id.xValue);
         yValue = (TextView) findViewById(R.id.yValue);
         zValue = (TextView) findViewById(R.id.zValue);
+        position = (TextView) findViewById(R.id.position);
+        movement_Check = (TextView) findViewById(R.id.movement_Check);
 
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-
-        if (ActivityCompat.checkSelfPermission((Activity)this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions((Activity)this, new String[]{
+        if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) this, new String[]{
                     android.Manifest.permission.ACCESS_FINE_LOCATION
             }, 10);
         }
 
-        // THE GPS location provider requires ACCESS_FINE_LOCATION permission.
+        // OnCreate
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+
+        if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) this, new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+            }, 10);
+        }
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-
-        if (location != null) {
-            lat = location.getLatitude();
-            longi = location.getLongitude();
-
-        } else {
-            setMyLastLocation();
-        }
+        lat = location.getLatitude();
+        longi = location.getLongitude();
 
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {
@@ -94,16 +99,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         mapView.getMapAsync(this);
 
 
-
         // Pause accelerometer if button pressed
         final Button button = findViewById(R.id.pauseButton);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (running == true){
+                if (running == true) {
                     running = false;
                     button.setText("Continue");
-                }
-                else if (running == false){
+                } else if (running == false) {
                     running = true;
                     button.setText("Pause");
                 }
@@ -119,8 +122,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         Log.d(TAG, "OnCreate: Registered accelerometer listener");
     }
 
-    private void setMyLastLocation() {
+    @Override
+    public void onLocationChanged(Location location) {
+        lat = location.getLatitude();
+        longi = location.getLongitude();
+        googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+        Log.d(TAG, "onLocationChanged: has entered" + lat + " and " + longi);
     }
+
 
     @Override
     public final void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -134,6 +143,9 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         float y = Math.round(event.values[1]);
         float z = Math.round(event.values[2]);
 
+        double pitch = Math.round(Math.atan2(-x,Math.sqrt(y*y+z*z)) * 57.3);
+        double roll = Math.round(Math.atan2(y,z) * 57.3);
+
         if (running == true) {
             Log.d(TAG, "OnSensorChanged: X" + x + " Y:" + y + " Z:" + z);
 
@@ -141,12 +153,46 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             yValue.setText("yValue:" + y);
             zValue.setText("zValue:" + z);
 
+            /*
+                Check the position based on the values, and changed the text to say either:
+                Pitch: Y-axis: Tilted Up (positive), Tilted Down (negative)
+                Roll: X-axis: Right (positive), Left (negative)
+                Perfectly level: Pitch and Roll equal to zero
+            */
+
+            if (roll >= 0) {
+                if (pitch >= 0){
+                    if (pitch == 0 && roll == 0) {
+                        position.setText("Perfectly level, pitch:" + pitch + " roll:" + roll);
+                    } else {
+                        position.setText("Tilted Up and to the right, pitch:" + pitch + " roll:" + roll);
+                    }
+                }  else {
+                    position.setText("Tilted Down and to the right, pitch:" + pitch + " roll:" + roll);
+                }
+            } else {
+                if (pitch >=0){
+                    position.setText("Tilted Up and to the Left, pitch:" + pitch + " roll:" + roll);
+                } else{
+                    position.setText("Tilted Down and to the Left, pitch:" + pitch + " roll:" + roll);
+                }
+            }
+
+            /*
+                Check if the phone is in the same location as the one it had 3 seconds ago.
+                Use a Handler
+             */
+
+
+
+
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        // Sensor_Delay_Normal ~5hz
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
@@ -179,19 +225,30 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     }
 
 
-
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(GoogleMap map) {
         // ONCE YOU HAVE THE COORDINATES, YOU CAN ADD MANY MARKERS
-        float zoomLevel = 15.0f;
+        googleMap = map;
+        float zoomLevel = 5f;
         googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel));
+
+        Log.d(TAG, "onMapReady: has entered");
     }
 
     @Override
-    public void onLocationChanged(final Location location) {
-        //your code here
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
     }
 
 };
-

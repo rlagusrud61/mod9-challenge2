@@ -47,6 +47,20 @@
                 android:layout_below="@+id/yValue"
                 android:layout_marginTop="30sp" />
 
+            <TextView
+                android:id="@+id/position"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/zValue"
+                android:layout_marginTop="30sp" />
+
+            <TextView
+                android:id="@+id/movement_Check"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/position"
+                android:layout_marginTop="30sp" />
+
 
             <Button
                 android:id="@+id/pauseButton"
