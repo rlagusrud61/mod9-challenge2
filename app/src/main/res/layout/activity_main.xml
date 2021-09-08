@@ -61,9 +61,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="422dp"
                 android:layout_below="@+id/pauseButton"
-                android:layout_marginTop="30sp" />
+                android:layout_marginTop="30sp"
+                tools:ignore="SpeakableTextPresentCheck" />
+
+            <TextView
+                android:id="@+id/altitude"
+                android:layout_width="match_parent"
+                android:layout_height="30sp"
+                android:text="TextView" />
 
 
         </LinearLayout>
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

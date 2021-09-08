@@ -1,5 +1,6 @@
 package com.example.challenge_1;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -28,6 +29,10 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.w3c.dom.Text;
+
+import java.util.List;
+
 
 public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener {
 
@@ -41,7 +46,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     // Handle location changes
     private LocationListener locationListener;
 
-    TextView xValue, yValue, zValue;
+    TextView xValue, yValue, zValue, altitude;
 
     // If app is running or if its on pause
     Boolean running = true;
@@ -51,9 +56,35 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     double lat = 52.213453; // 52.213453
     double longi = 6.879420; // 6.879420
-    LatLng latLng = new LatLng (lat, longi);
+    LatLng latLng = new LatLng(lat, longi);
     LatLng[] coordinates_total;
 
+
+    private Location getLastKnownLocation() {
+        List<String> providers = locationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions((Activity)this, new String[]{
+                        android.Manifest.permission.ACCESS_FINE_LOCATION
+                }, 10);
+            }
+            Location location = locationManager.getLastKnownLocation(provider);
+            System.out.println("Last known location, provider: "+ provider +" location: " + location);
+
+            if (location == null){
+                continue;
+            }if (bestLocation == null || location.getAccuracy() < bestLocation.getAccuracy()){
+                System.out.println("Found best location: " + location);
+                bestLocation = location;
+            }
+        }
+        if (bestLocation == null) {
+            System.out.println("Bestlocation null ree paniek");
+            return null;
+        }
+        return bestLocation;
+    }
     @Override
     public final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,11 +93,11 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         xValue = (TextView) findViewById(R.id.xValue);
         yValue = (TextView) findViewById(R.id.yValue);
         zValue = (TextView) findViewById(R.id.zValue);
-
+        altitude = (TextView) findViewById(R.id.altitude);
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
 
-        if (ActivityCompat.checkSelfPermission((Activity)this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity)this, new String[]{
                     android.Manifest.permission.ACCESS_FINE_LOCATION
             }, 10);
@@ -82,7 +113,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             longi = location.getLongitude();
 
         } else {
-            setMyLastLocation();
+            getLastKnownLocation();
         }
 
         Bundle mapViewBundle = null;
@@ -99,11 +130,11 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         final Button button = findViewById(R.id.pauseButton);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (running == true){
+                if (running){
                     running = false;
                     button.setText("Continue");
                 }
-                else if (running == false){
+                else{
                     running = true;
                     button.setText("Pause");
                 }
@@ -120,6 +151,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     }
 
     private void setMyLastLocation() {
+
     }
 
     @Override
@@ -183,7 +215,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     @Override
     public void onMapReady(GoogleMap googleMap) {
         // ONCE YOU HAVE THE COORDINATES, YOU CAN ADD MANY MARKERS
-        float zoomLevel = 15.0f;
+        float zoomLevel = 1.0f;
         googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel));
     }
