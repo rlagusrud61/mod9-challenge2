@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.core.app.ActivityCompat;
@@ -45,18 +46,19 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     // Handle location changes
     private LocationListener locationListener;
 
-    TextView xValue, yValue, zValue, position, movement_Check;
+    TextView xValue, yValue, zValue, introText1, introText2, introText3;
+    ImageButton startButton;
+    Button again;
 
     // If app is running or if its on pause
-    Boolean running = true;
+    Boolean running = false;
+    Boolean reset = false;
 
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
     double lat = 0; // 52.213453
     double longi = 0; // 6.879420
-    LatLng latLng = new LatLng(lat, longi);
-    LatLng[] coordinates_total;
 
     Marker myMarker;
 
@@ -83,11 +85,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        introText1 = (TextView) findViewById(R.id.introText1);
+        introText2 = (TextView) findViewById(R.id.introText2);
+        introText3 = (TextView) findViewById(R.id.introText3);
         xValue = (TextView) findViewById(R.id.xValue);
         yValue = (TextView) findViewById(R.id.yValue);
         zValue = (TextView) findViewById(R.id.zValue);
-        position = (TextView) findViewById(R.id.position);
-        movement_Check = (TextView) findViewById(R.id.movement_Check);
+        startButton = (ImageButton) findViewById(R.id.startButton);
+        again = (Button) findViewById(R.id.again);
 
         if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) this, new String[]{
@@ -101,8 +106,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        lat = location.getLatitude();
-        longi = location.getLongitude();
 
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {
@@ -112,25 +115,63 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
 
-
-        // Pause accelerometer if button pressed
-        final Button button = findViewById(R.id.pauseButton);
-        button.setOnClickListener(new View.OnClickListener() {
+        //Image Button
+        startButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (running == true) {
-                    running = false;
-                    button.setText("Continue");
-                } else if (running == false) {
+                if (running == false && reset == false) {
                     running = true;
-                    button.setText("Pause");
+                    introText1.setText("Press the button to start ");
+                    introText2.setText("detecting the anomalies ");
+                    introText3.setText("on your journey");
+                    xValue.setVisibility(View.VISIBLE);
+                    yValue.setVisibility(View.VISIBLE);
+                    zValue.setVisibility(View.VISIBLE);
+                    startButton.setImageResource(R.drawable.stop);
+                    mapView.setVisibility(View.GONE);
+                } else if (running == true && reset == false) {
+                    running = false;
+                    reset = true;
+                    introText1.setText("All done! ");
+                    introText2.setText("These were the anomalies you ");
+                    introText3.setText("encountered during your journey:");
+                    xValue.setVisibility(View.GONE);
+                    yValue.setVisibility(View.GONE);
+                    zValue.setVisibility(View.GONE);
+                    // Make map visible here
+                    mapView.setVisibility(View.VISIBLE);
+                    again.setVisibility(View.VISIBLE);
+                    startButton.setVisibility(View.GONE);
+                } else if (running == false && reset == true) {
+                    reset = false;
+                    introText1.setText("Press the button to start ");
+                    introText2.setText("detecting the anomalies ");
+                    introText3.setText("on your journey");
+                    startButton.setVisibility(View.VISIBLE);
+                    startButton.setImageResource(R.drawable.play);
+                    mapView.setVisibility(View.GONE);
+                    again.setVisibility(View.GONE);
                 }
             }
         });
 
-        // Send a DEBUG log message.
-        Log.d(TAG, "OnCreate: Initializing the sensor services");
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        // Do it again button to restart the app
+        again.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (running == false && reset == true) {
+                    reset = false;
+                    introText1.setText("Press the button to start ");
+                    introText2.setText("detecting the anomalies ");
+                    introText3.setText("on your journey");
+                    startButton.setVisibility(View.VISIBLE);
+                    startButton.setImageResource(R.drawable.play);
+                    mapView.setVisibility(View.GONE);
+                    again.setVisibility(View.GONE);
+                }
+            }
+        });
 
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorManager.registerListener(SensorActivity.this, accelerometer, 100000);
         Log.d(TAG, "OnCreate: Registered accelerometer listener");
@@ -140,10 +181,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     public void onLocationChanged(Location location) {
         lat = location.getLatitude();
         longi = location.getLongitude();
-        float zoomLevel = 5f;
-        myMarker.setPosition(new LatLng(lat, longi));
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel));
-        Log.d(TAG, "onLocationChanged: has entered" + lat + " and " + longi);
+        if (mapView.getVisibility() == View.VISIBLE) {
+            float zoomLevel = 15f;
+            Log.d(TAG, "OnHere: " + lat + ": " + longi);
+            googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
+            googleMap.addMarker(new MarkerOptions().position(new LatLng(52.2128944, 6.8833701)));
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
+        }
     }
 
 
@@ -220,13 +264,11 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     @Override
     public void onMapReady(GoogleMap map) {
-        // ONCE YOU HAVE THE COORDINATES, YOU CAN ADD MANY MARKERS
         googleMap = map;
-        float zoomLevel = 1f;
-        myMarker = googleMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel));
-
-        Log.d(TAG, "onMapReady: has entered");
+        googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
+        System.out.println("OnMapReady" + googleMap);
+        // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
+        mapView.setVisibility(View.GONE);
     }
 
     @Override
