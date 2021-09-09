@@ -82,8 +82,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     boolean speedbump = false;
     boolean anomaly = false;
 
-    final int dt = 100000;
-    final float sensitivity = 4;
+    final int dt = 200000;
+    final float sensitivity = 6;
     long time = 0;
     boolean startTime = true;
 
@@ -249,34 +249,32 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         float z;
         double mag;
 
-        x = event.values[0];
+        x = event.values[0]; //getting the accelerometer values
         y = event.values[1];
         z = event.values[2];
-        accel_mag.add(Math.sqrt(x*x + y*y + z*z) - 9.81);
+        accel_mag.add(Math.sqrt(x*x + y*y + z*z) - 9.81); // calculating the magnitude of the acceleration
 
-        if(accel_mag.size() > 5) {
+        if(accel_mag.size() > 5) { //limiting the window for the averaging
             accel_mag.remove(0);
         }
 
         if (running == true) {
+            mag = average(accel_mag); //calculating average of last couple of samples
 
-
-            mag = average(accel_mag);
-
-            Log.d(TAG, "OnSensorChanged: X:" + x + " Y:" + y + " Z:" + z);
+            Log.d(TAG, "OnSensorChanged: mag:" + mag);
 
             if (firstDetection) {
                 if (startTime) {
                     time = System.nanoTime();
                     startTime = false;
                 }
-                if (System.nanoTime() > time + 800000000) {
+                if (System.nanoTime() > time + 600000000) {
                     firstDetection = false;
                     startTime = true;
                     speedbump = true;
                 }
                 else {
-                    if (System.nanoTime() > time + 250000000) {
+                    if (System.nanoTime() > time + 140000000) {
                         if (mag>sensitivity) {
                             firstDetection = false;
                             startTime = true;
@@ -298,13 +296,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                         startTime = true;
                     }
                     else {
-                        if (speedbump) yValue.setText("yValue:" + y + " speedbump");
-                        if (anomaly) yValue.setText("yValue:" + y + " anomaly");
+                        if (speedbump) yValue.setText("speedbump");
+                        if (anomaly) yValue.setText("anomaly");
                     }
                 }
                 else {
                     firstDetection = mag>sensitivity;
-                    yValue.setText("yValue:" + y);
+                    yValue.setText("");
                 }
             }
 
@@ -329,7 +327,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 yValue.setText("yValue:" + y);
             }*/
 
-            xValue.setText("xValue:" + x + " magnitude - gravity: " + mag);
+            xValue.setText("magnitude - gravity: " + mag);
         }
     }
 
