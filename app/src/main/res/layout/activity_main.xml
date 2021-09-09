@@ -40,6 +40,8 @@
                 android:text="Press the button to start "
                 android:layout_marginTop="20dp"
                 android:background="#00000000"
+                android:fontFamily="@font/quicksand"
+                android:textSize="20sp"
                 android:textColor="@color/white" />
 
             <EditText
@@ -52,6 +54,8 @@
                 android:scaleType="fitCenter"
                 android:text="detecting the anomalies "
                 android:background="#00000000"
+                android:fontFamily="@font/quicksand"
+                android:textSize="20sp"
                 android:textColor="@color/white" />
 
             <EditText
@@ -64,6 +68,8 @@
                 android:scaleType="fitCenter"
                 android:text="on your journey"
                 android:background="#00000000"
+                android:fontFamily="@font/quicksand"
+                android:textSize="20sp"
                 android:textColor="@color/white" />
 
             <!--<Button
@@ -89,6 +95,7 @@
                 android:adjustViewBounds="true"
                 android:cropToPadding="false"
                 android:scaleType="fitCenter"
+                android:background="@android:color/transparent"
                 android:src="@drawable/play" />
 
             <TextView
