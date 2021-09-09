@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/background_color"
@@ -30,41 +31,44 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <EditText
+            <TextView
                 android:id="@+id/introText1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ems="50"
                 android:gravity="center"
-                android:inputType="textPersonName"
                 android:scaleType="fitCenter"
                 android:text="Press the button to start "
                 android:layout_marginTop="20dp"
                 android:background="#00000000"
+                android:fontFamily="@font/quicksand"
+                android:textSize="20sp"
                 android:textColor="@color/white" />
 
-            <EditText
+            <TextView
                 android:id="@+id/introText2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ems="50"
                 android:gravity="center"
-                android:inputType="textPersonName"
                 android:scaleType="fitCenter"
                 android:text="detecting the anomalies "
                 android:background="#00000000"
+                android:fontFamily="@font/quicksand"
+                android:textSize="20sp"
                 android:textColor="@color/white" />
 
-            <EditText
+            <TextView
                 android:id="@+id/introText3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ems="50"
                 android:gravity="center"
-                android:inputType="textPersonName"
                 android:scaleType="fitCenter"
                 android:text="on your journey"
                 android:background="#00000000"
+                android:fontFamily="@font/quicksand"
+                android:textSize="20sp"
                 android:textColor="@color/white" />
 
             <!--<Button

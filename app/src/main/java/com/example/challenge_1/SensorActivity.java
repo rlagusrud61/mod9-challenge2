@@ -2,8 +2,11 @@ package com.example.challenge_1;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,7 +14,6 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -47,11 +49,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private LocationManager locationManager;
     // Handle location changes
     private LocationListener locationListener;
+    private ScreenReceiver screenReceiver;
 
+    // Front-End components
     TextView xValue, yValue, zValue, introText1, introText2, introText3;
-    LinearLayout background_color;
     ImageButton startButton;
     Button again;
+    LinearLayout linearLayout;
 
     // If app is running or if its on pause
     Boolean running = false;
@@ -107,7 +111,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         zValue = (TextView) findViewById(R.id.zValue);
         startButton = (ImageButton) findViewById(R.id.startButton);
         again = (Button) findViewById(R.id.again);
-        background_color = (LinearLayout) findViewById(R.id.background_color);
+        linearLayout = findViewById(R.id.layout);
+
+        // initialize ScreenReceiver for tracking screen state changes
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        screenReceiver = new ScreenReceiver();
+        registerReceiver(screenReceiver,filter);
 
         if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) this, new String[]{
@@ -133,8 +143,9 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         //Image Button
         startButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (running == false && reset == false) {
+                if (!running && !reset) {
                     running = true;
+                    linearLayout.setBackgroundResource(R.drawable.app_challenge1);
                     introText1.setText("Press the button to start ");
                     introText2.setText("detecting the anomalies ");
                     introText3.setText("on your journey");
@@ -143,21 +154,23 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     zValue.setVisibility(View.VISIBLE);
                     startButton.setImageResource(R.drawable.stop);
                     mapView.setVisibility(View.GONE);
-                } else if (running && reset == false) {
+                } else if (running && !reset) {
+                    linearLayout.setBackgroundResource(R.drawable.app_challenge1);
                     running = false;
                     reset = true;
                     introText1.setText("All done! ");
                     introText2.setText("These were the anomalies you ");
                     introText3.setText("encountered during your journey:");
-                    //(Color.argb(100,5,129,49))
                     xValue.setVisibility(View.GONE);
                     yValue.setVisibility(View.GONE);
                     zValue.setVisibility(View.GONE);
+                    linearLayout.setBackgroundColor(Color.rgb(5,129,146));
                     // Make map visible here
                     mapView.setVisibility(View.VISIBLE);
                     again.setVisibility(View.VISIBLE);
                     startButton.setVisibility(View.GONE);
-                } else if (running == false && reset) {
+                } else if (!running && reset) {
+                    linearLayout.setBackgroundResource(R.drawable.app_challenge1);
                     reset = false;
                     introText1.setText("Press the button to start ");
                     introText2.setText("detecting the anomalies ");
@@ -173,7 +186,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         // Do it again button to restart the app
         again.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (running == false && reset) {
+                if (!running && reset) {
+                    linearLayout.setBackgroundResource(R.drawable.app_challenge1);
                     reset = false;
                     introText1.setText("Press the button to start ");
                     introText2.setText("detecting the anomalies ");
