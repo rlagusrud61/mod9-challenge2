@@ -3,6 +3,8 @@
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -47,7 +49,9 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private LocationManager locationManager;
     // Handle location changes
     private LocationListener locationListener;
+    private ScreenReceiver screenReceiver;
 
+    // Front-End components
     TextView xValue, yValue, zValue, introText1, introText2, introText3;
     ImageButton startButton;
     Button again;
@@ -97,6 +101,12 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         startButton = (ImageButton) findViewById(R.id.startButton);
         again = (Button) findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
+
+        // initialize ScreenReceiver for tracking screen state changes
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        screenReceiver = new ScreenReceiver();
+        registerReceiver(screenReceiver,filter);
 
         if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) this, new String[]{
@@ -276,6 +286,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         googleMap = map;
         googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
         System.out.println("OnMapReady" + googleMap);
+        mapView.onResume();
+        mapView.onEnterAmbient(null);
         // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
         mapView.setVisibility(View.GONE);
     }
