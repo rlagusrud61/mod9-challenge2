@@ -32,8 +32,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-// import com.google.firebase.storage.FirebaseStorage;
-// import com.google.firebase.storage.StorageReference;
+//import com.google.firebase.storage.FirebaseStorage;
+//import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +53,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private ScreenReceiver screenReceiver;
 
     // Front-End components
-    TextView xValue, yValue, introText1, introText2, introText3;
+    TextView xValue, yValue, zValue, introText1, introText2, introText3;
     ImageButton startButton;
     Button again;
     LinearLayout linearLayout;
@@ -76,6 +76,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     ArrayList<Float> accel_x = new ArrayList<Float>();
     ArrayList<Float> accel_y = new ArrayList<Float>();
     ArrayList<Float> accel_z = new ArrayList<Float>();
+    ArrayList<Double> accel_mag = new ArrayList<Double>();
 
     boolean firstDetection = false;
     boolean speedbump = false;
@@ -96,7 +97,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     //StorageReference coordinates = storageRef.getParent().child("SensorActivity");
 
 
-    private float average(ArrayList<Float> input) {
+    private float average(ArrayList<Double> input) {
         float temp = 0;
         for (int i=0; i<input.size();i++) {
             temp += input.get(i);
@@ -116,6 +117,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         introText3 = (TextView) findViewById(R.id.introText3);
         xValue = (TextView) findViewById(R.id.xValue);
         yValue = (TextView) findViewById(R.id.yValue);
+
         startButton = (ImageButton) findViewById(R.id.startButton);
         again = (Button) findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
@@ -158,6 +160,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     introText3.setText("on your journey");
                     xValue.setVisibility(View.VISIBLE);
                     yValue.setVisibility(View.VISIBLE);
+
                     startButton.setImageResource(R.drawable.stop);
                     mapView.setVisibility(View.GONE);
                 } else if (running && !reset) {
@@ -246,21 +249,19 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         float z;
         double mag;
 
-        accel_x.add(event.values[0]);
-        accel_y.add(event.values[1]);
-        accel_z.add(event.values[2]);
+        x = event.values[0];
+        y = event.values[1];
+        z = event.values[2];
+        accel_mag.add(Math.sqrt(x*x + y*y + z*z) - 9.81);
 
-        if(accel_x.size() > 5) {
-            accel_x.remove(0);
-            accel_y.remove(0);
-            accel_z.remove(0);
+        if(accel_mag.size() > 5) {
+            accel_mag.remove(0);
         }
 
         if (running == true) {
-            x = average(accel_x);
-            y = average(accel_y);
-            z = average(accel_z);
-            mag = Math.sqrt(x*x + y*y + z*z) - 9.81;
+
+
+            mag = average(accel_mag);
 
             Log.d(TAG, "OnSensorChanged: X:" + x + " Y:" + y + " Z:" + z);
 
@@ -269,14 +270,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     time = System.nanoTime();
                     startTime = false;
                 }
-                if (System.nanoTime() > time + 1000000000) {
+                if (System.nanoTime() > time + 800000000) {
                     firstDetection = false;
                     startTime = true;
                     speedbump = true;
                 }
                 else {
-                    if (System.nanoTime() > time + 200000000) {
-
+                    if (System.nanoTime() > time + 250000000) {
                         if (mag>sensitivity) {
                             firstDetection = false;
                             startTime = true;
@@ -296,20 +296,38 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                         anomaly = false;
                         speedbump = false;
                         startTime = true;
-                        yValue.setVisibility(View.GONE);
                     }
                     else {
                         if (speedbump) yValue.setText("yValue:" + y + " speedbump");
-                        if (anomaly) {
-                            yValue.setVisibility(View.VISIBLE);
-                            yValue.setText("yValue:" + y + " anomaly");
-                        };
+                        if (anomaly) yValue.setText("yValue:" + y + " anomaly");
                     }
                 }
                 else {
                     firstDetection = mag>sensitivity;
+                    yValue.setText("yValue:" + y);
                 }
             }
+
+
+            /*if (detected) {
+                if (startTime) {
+                    time = System.nanoTime();
+                    startTime = false;
+                }
+                if (time + 2000000000 > System.nanoTime()) {
+                    yValue.setText("yValue:" + y + " Anomaly detected!");
+                }
+                else {
+                    yValue.setText("yValue:" + y);
+                    detected = false;
+                    startTime = true;
+                }
+
+            }
+            else {
+                detected = mag > 2;
+                yValue.setText("yValue:" + y);
+            }*/
 
             xValue.setText("xValue:" + x + " magnitude - gravity: " + mag);
         }
@@ -378,7 +396,3 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     }
 
 };
-
-
-
-
