@@ -252,30 +252,27 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         x = event.values[0]; //getting the accelerometer values
         y = event.values[1];
         z = event.values[2];
-        accel_mag.add(Math.sqrt(x*x + y*y + z*z) - 9.81); // calculating the magnitude of the acceleration
+        accel_mag.add(Math.sqrt(x * x + y * y + z * z) - 9.81); // calculating the magnitude of the acceleration
 
-        if(accel_mag.size() > 5) { //limiting the window for the averaging
+        if (accel_mag.size() > 5) { //limiting the window for the averaging
             accel_mag.remove(0);
         }
 
         if (running == true) {
             mag = average(accel_mag); //calculating average of last couple of samples
 
-            Log.d(TAG, "OnSensorChanged: mag:" + mag);
-
-            if (firstDetection) {
-                if (startTime) {
+            if (firstDetection) { //to detect an anomaly 2 acceleration peaks have to be detetected
+                if (startTime) { //start keeping relative time
                     time = System.nanoTime();
                     startTime = false;
                 }
-                if (System.nanoTime() > time + 600000000) {
+                if (System.nanoTime() > time + 600000000) { //if no second peak is detected within 0.6s its not considered an anomaly
                     firstDetection = false;
                     startTime = true;
                     speedbump = true;
-                }
-                else {
-                    if (System.nanoTime() > time + 140000000) {
-                        if (mag>sensitivity) {
+                } else {
+                    if (System.nanoTime() > time + 140000000) { //wait 0.14s after first detection so the same peak is not detected twice
+                        if (mag > sensitivity) { //if second peak is detected classify it as anomaly
                             firstDetection = false;
                             startTime = true;
                             anomaly = true;
@@ -283,8 +280,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 if (speedbump || anomaly) {
                     if (startTime) {
                         time = System.nanoTime();
@@ -294,43 +290,19 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                         anomaly = false;
                         speedbump = false;
                         startTime = true;
-                    }
-                    else {
+                    } else {
                         if (speedbump) yValue.setText("speedbump");
                         if (anomaly) yValue.setText("anomaly");
                     }
-                }
-                else {
-                    firstDetection = mag>sensitivity;
+                } else {
+                    firstDetection = mag > sensitivity;
                     yValue.setText("");
                 }
+
+                xValue.setText("magnitude - gravity: " + mag);
             }
-
-
-            /*if (detected) {
-                if (startTime) {
-                    time = System.nanoTime();
-                    startTime = false;
-                }
-                if (time + 2000000000 > System.nanoTime()) {
-                    yValue.setText("yValue:" + y + " Anomaly detected!");
-                }
-                else {
-                    yValue.setText("yValue:" + y);
-                    detected = false;
-                    startTime = true;
-                }
-
-            }
-            else {
-                detected = mag > 2;
-                yValue.setText("yValue:" + y);
-            }*/
-
-            xValue.setText("magnitude - gravity: " + mag);
         }
     }
-
 
     @Override
     protected void onResume() {
@@ -370,7 +342,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     @Override
     public void onMapReady(GoogleMap map) {
         googleMap = map;
-        googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
         System.out.println("OnMapReady" + googleMap);
         mapView.onResume();
         mapView.onEnterAmbient(null);
