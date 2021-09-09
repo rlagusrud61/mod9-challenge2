@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "538157396465",
+    "project_id": "utchallenge1",
+    "storage_bucket": "utchallenge1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538157396465:android:48898f2f1816d313b2d450",
+        "android_client_info": {
+          "package_name": "com.example.challenge_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "538157396465-277mdqs62updi5ahobsftfe8201ka84k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2FN6qjCTuXIaUCXGu35Pbr-mGV91M6p4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "538157396465-277mdqs62updi5ahobsftfe8201ka84k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

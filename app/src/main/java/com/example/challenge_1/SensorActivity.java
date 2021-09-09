@@ -1,19 +1,17 @@
 package com.example.challenge_1;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -32,6 +30,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 
@@ -73,6 +73,16 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     ArrayList<Float> accel_z = new ArrayList<Float>();
 
     final int dt = 100000;
+
+    ArrayList<Double> lat_total = new ArrayList<Double>();
+    ArrayList<Double> longi_total = new ArrayList<Double>();
+
+    FirebaseStorage storage = FirebaseStorage.getInstance();
+    StorageReference storageRef = storage.getReference();
+    // Create a child reference
+    // imagesRef now points to "images"
+    StorageReference coordinates = storageRef.getParent().child("SensorActivity");
+
 
     private float average(ArrayList<Float> input) {
         float temp = 0;
@@ -189,11 +199,18 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             lat = location.getLatitude();
             longi = location.getLongitude();
             googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
+            lat_total.add(lat);
+            longi_total.add(longi);
             requested = false;
         }
         if (mapView.getVisibility() == View.VISIBLE) {
             float zoomLevel = 15f;
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
+            // GET THE ONES FROM THE CLOUD AND CHANGE THEIR COLOR TO BLUE?
+
+
+            // SEND ALL THE LAT AND LONGI TO THE CLOUD
+
         }
     }
 
@@ -273,6 +290,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         googleMap = map;
         googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
         System.out.println("OnMapReady" + googleMap);
+        mapView.onResume();
+        mapView.onEnterAmbient(null);
         // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
         mapView.setVisibility(View.GONE);
     }
