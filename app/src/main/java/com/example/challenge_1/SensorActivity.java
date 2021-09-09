@@ -36,6 +36,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 
 public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener {
@@ -76,7 +77,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     ArrayList<Float> accel_y = new ArrayList<Float>();
     ArrayList<Float> accel_z = new ArrayList<Float>();
 
+    boolean firstDetection = false;
+    boolean speedbump = false;
+    boolean anomaly = false;
+
     final int dt = 100000;
+    final float sensitivity = 4;
+    long time = 0;
+    boolean startTime = true;
 
     ArrayList<Double> lat_total = new ArrayList<Double>();
     ArrayList<Double> longi_total = new ArrayList<Double>();
@@ -203,7 +211,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(SensorActivity.this, accelerometer, 100000);
+        sensorManager.registerListener(SensorActivity.this, accelerometer, dt);
         Log.d(TAG, "OnCreate: Registered accelerometer listener");
     }
 
@@ -239,6 +247,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         float x;
         float y;
         float z;
+        double mag;
 
         accel_x.add(event.values[0]);
         accel_y.add(event.values[1]);
@@ -254,10 +263,74 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             x = average(accel_x);
             y = average(accel_y);
             z = average(accel_z);
+            mag = Math.sqrt(x*x + y*y + z*z) - 9.81;
+
             Log.d(TAG, "OnSensorChanged: X:" + x + " Y:" + y + " Z:" + z);
 
-            xValue.setText("xValue:" + x);
-            yValue.setText("yValue:" + y);
+            if (firstDetection) {
+                if (startTime) {
+                    time = System.nanoTime();
+                    startTime = false;
+                }
+                if (System.nanoTime() > time + 1000000000) {
+                    firstDetection = false;
+                    startTime = true;
+                    speedbump = true;
+                }
+                else {
+                    if (System.nanoTime() > time + 200000000) {
+                        if (mag>sensitivity) {
+                            firstDetection = false;
+                            startTime = true;
+                            anomaly = true;
+                        }
+                    }
+                }
+            }
+            else {
+                if (speedbump || anomaly) {
+                    if (startTime) {
+                        time = System.nanoTime();
+                        startTime = false;
+                    }
+                    if (time + 2000000000 < System.nanoTime()) {
+                        anomaly = false;
+                        speedbump = false;
+                        startTime = true;
+                    }
+                    else {
+                        if (speedbump) yValue.setText("yValue:" + y + " speedbump");
+                        if (anomaly) yValue.setText("yValue:" + y + " anomaly");
+                    }
+                }
+                else {
+                    firstDetection = mag>sensitivity;
+                    yValue.setText("yValue:" + y);
+                }
+            }
+
+
+            /*if (detected) {
+                if (startTime) {
+                    time = System.nanoTime();
+                    startTime = false;
+                }
+                if (time + 2000000000 > System.nanoTime()) {
+                    yValue.setText("yValue:" + y + " Anomaly detected!");
+                }
+                else {
+                    yValue.setText("yValue:" + y);
+                    detected = false;
+                    startTime = true;
+                }
+
+            }
+            else {
+                detected = mag > 2;
+                yValue.setText("yValue:" + y);
+            }*/
+
+            xValue.setText("xValue:" + x + " magnitude - gravity: " + mag);
             zValue.setText("zValue:" + z);
         }
     }
@@ -266,8 +339,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     @Override
     protected void onResume() {
         super.onResume();
-        // Sensor_Delay_Normal ~5hz
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, accelerometer, dt);
     }
 
     @Override
