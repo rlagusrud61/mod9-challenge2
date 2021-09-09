@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -18,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.core.app.ActivityCompat;
@@ -47,12 +49,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private LocationListener locationListener;
 
     TextView xValue, yValue, zValue, introText1, introText2, introText3;
+    LinearLayout background_color;
     ImageButton startButton;
     Button again;
 
     // If app is running or if its on pause
     Boolean running = false;
     Boolean reset = false;
+    Boolean requested = true;
 
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
@@ -93,6 +97,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         zValue = (TextView) findViewById(R.id.zValue);
         startButton = (ImageButton) findViewById(R.id.startButton);
         again = (Button) findViewById(R.id.again);
+        background_color = (LinearLayout) findViewById(R.id.background_color);
 
         if (ActivityCompat.checkSelfPermission((Activity) this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) this, new String[]{
@@ -128,12 +133,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     zValue.setVisibility(View.VISIBLE);
                     startButton.setImageResource(R.drawable.stop);
                     mapView.setVisibility(View.GONE);
-                } else if (running == true && reset == false) {
+                } else if (running && reset == false) {
                     running = false;
                     reset = true;
                     introText1.setText("All done! ");
                     introText2.setText("These were the anomalies you ");
                     introText3.setText("encountered during your journey:");
+                    //(Color.argb(100,5,129,49))
                     xValue.setVisibility(View.GONE);
                     yValue.setVisibility(View.GONE);
                     zValue.setVisibility(View.GONE);
@@ -141,7 +147,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     mapView.setVisibility(View.VISIBLE);
                     again.setVisibility(View.VISIBLE);
                     startButton.setVisibility(View.GONE);
-                } else if (running == false && reset == true) {
+                } else if (running == false && reset) {
                     reset = false;
                     introText1.setText("Press the button to start ");
                     introText2.setText("detecting the anomalies ");
@@ -157,7 +163,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         // Do it again button to restart the app
         again.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (running == false && reset == true) {
+                if (running == false && reset) {
                     reset = false;
                     introText1.setText("Press the button to start ");
                     introText2.setText("detecting the anomalies ");
@@ -179,13 +185,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     @Override
     public void onLocationChanged(Location location) {
-        lat = location.getLatitude();
-        longi = location.getLongitude();
+        if (requested) {
+            lat = location.getLatitude();
+            longi = location.getLongitude();
+            googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
+            requested = false;
+        }
         if (mapView.getVisibility() == View.VISIBLE) {
             float zoomLevel = 15f;
-            Log.d(TAG, "OnHere: " + lat + ": " + longi);
-            googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
-            googleMap.addMarker(new MarkerOptions().position(new LatLng(52.2128944, 6.8833701)));
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
         }
     }
@@ -221,7 +228,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             xValue.setText("xValue:" + x);
             yValue.setText("yValue:" + y);
             zValue.setText("zValue:" + z);
-
         }
     }
 
