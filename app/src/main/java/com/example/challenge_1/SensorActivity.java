@@ -32,8 +32,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+// import com.google.firebase.storage.FirebaseStorage;
+// import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +53,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private ScreenReceiver screenReceiver;
 
     // Front-End components
-    TextView xValue, yValue, zValue, introText1, introText2, introText3;
+    TextView xValue, yValue, introText1, introText2, introText3;
     ImageButton startButton;
     Button again;
     LinearLayout linearLayout;
@@ -89,11 +89,11 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     ArrayList<Double> lat_total = new ArrayList<Double>();
     ArrayList<Double> longi_total = new ArrayList<Double>();
 
-    FirebaseStorage storage = FirebaseStorage.getInstance();
-    StorageReference storageRef = storage.getReference();
+    //FirebaseStorage storage = FirebaseStorage.getInstance();
+    //StorageReference storageRef = storage.getReference();
     // Create a child reference
     // imagesRef now points to "images"
-    StorageReference coordinates = storageRef.getParent().child("SensorActivity");
+    //StorageReference coordinates = storageRef.getParent().child("SensorActivity");
 
 
     private float average(ArrayList<Float> input) {
@@ -116,7 +116,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         introText3 = (TextView) findViewById(R.id.introText3);
         xValue = (TextView) findViewById(R.id.xValue);
         yValue = (TextView) findViewById(R.id.yValue);
-        zValue = (TextView) findViewById(R.id.zValue);
         startButton = (ImageButton) findViewById(R.id.startButton);
         again = (Button) findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
@@ -159,7 +158,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     introText3.setText("on your journey");
                     xValue.setVisibility(View.VISIBLE);
                     yValue.setVisibility(View.VISIBLE);
-                    zValue.setVisibility(View.VISIBLE);
                     startButton.setImageResource(R.drawable.stop);
                     mapView.setVisibility(View.GONE);
                 } else if (running && !reset) {
@@ -171,7 +169,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     introText3.setText("encountered during your journey:");
                     xValue.setVisibility(View.GONE);
                     yValue.setVisibility(View.GONE);
-                    zValue.setVisibility(View.GONE);
                     linearLayout.setBackgroundColor(Color.rgb(5,129,146));
                     // Make map visible here
                     mapView.setVisibility(View.VISIBLE);
@@ -279,10 +276,12 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 }
                 else {
                     if (System.nanoTime() > time + 200000000) {
+
                         if (mag>sensitivity) {
                             firstDetection = false;
                             startTime = true;
                             anomaly = true;
+                            requested = true;
                         }
                     }
                 }
@@ -297,41 +296,22 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                         anomaly = false;
                         speedbump = false;
                         startTime = true;
+                        yValue.setVisibility(View.GONE);
                     }
                     else {
                         if (speedbump) yValue.setText("yValue:" + y + " speedbump");
-                        if (anomaly) yValue.setText("yValue:" + y + " anomaly");
+                        if (anomaly) {
+                            yValue.setVisibility(View.VISIBLE);
+                            yValue.setText("yValue:" + y + " anomaly");
+                        };
                     }
                 }
                 else {
                     firstDetection = mag>sensitivity;
-                    yValue.setText("yValue:" + y);
                 }
             }
-
-
-            /*if (detected) {
-                if (startTime) {
-                    time = System.nanoTime();
-                    startTime = false;
-                }
-                if (time + 2000000000 > System.nanoTime()) {
-                    yValue.setText("yValue:" + y + " Anomaly detected!");
-                }
-                else {
-                    yValue.setText("yValue:" + y);
-                    detected = false;
-                    startTime = true;
-                }
-
-            }
-            else {
-                detected = mag > 2;
-                yValue.setText("yValue:" + y);
-            }*/
 
             xValue.setText("xValue:" + x + " magnitude - gravity: " + mag);
-            zValue.setText("zValue:" + z);
         }
     }
 
@@ -398,3 +378,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     }
 
 };
+
+
+
+

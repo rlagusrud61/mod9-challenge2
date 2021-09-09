@@ -100,6 +100,9 @@
                 android:id="@+id/xValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:gravity="center"
                 android:layout_marginTop="30sp" />
 
             <TextView
@@ -107,13 +110,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/xValue"
-                android:layout_marginTop="30sp" />
-
-            <TextView
-                android:id="@+id/zValue"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/yValue"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="20sp"
                 android:layout_marginTop="30sp" />
 
             <Button
@@ -121,7 +120,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
-                android:layout_below="@+id/zValue"
+                android:layout_below="@+id/yValue"
                 android:text="Do it again" />
 
         </LinearLayout>
