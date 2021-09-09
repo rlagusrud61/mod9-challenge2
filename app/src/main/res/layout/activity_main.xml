@@ -1,35 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/app_challenge1"
+    android:orientation="vertical">
 
+
+    <!--    <ImageView
+        android:id="@+id/im1"
+        android:scaleType="fitXY"
+        android:layout_height="match_parent"
+        android:background="@drawable/app_challenge1"
+        android:layout_width="match_parent"/>-->
 
     <LinearLayout
-        android:layout_width= "wrap_content"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="20sp"
+        tools:ignore="MissingConstraints"
         tools:layout_editor_absoluteX="1dp"
-        tools:layout_editor_absoluteY="1dp"
-        tools:ignore="MissingConstraints">
+        tools:layout_editor_absoluteY="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <Button
+            <EditText
+                android:id="@+id/introText1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="50"
+                android:gravity="center"
+                android:inputType="textPersonName"
+                android:scaleType="fitCenter"
+                android:text="Press the button to start "
+                android:layout_marginTop="20dp"
+                android:background="#00000000"
+                android:textColor="@color/white" />
+
+            <EditText
+                android:id="@+id/introText2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="50"
+                android:gravity="center"
+                android:inputType="textPersonName"
+                android:scaleType="fitCenter"
+                android:text="detecting the anomalies "
+                android:background="#00000000"
+                android:textColor="@color/white" />
+
+            <EditText
+                android:id="@+id/introText3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="50"
+                android:gravity="center"
+                android:inputType="textPersonName"
+                android:scaleType="fitCenter"
+                android:text="on your journey"
+                android:background="#00000000"
+                android:textColor="@color/white" />
+
+            <!--<Button
                 android:id="@+id/button"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Bike Path Anomaly Detection"
-                app:backgroundTint="#4CAF50" />
+                app:backgroundTint="#4CAF50" />-->
+
+            <com.google.android.gms.maps.MapView
+                android:id="@+id/map"
+                android:layout_width="match_parent"
+                android:layout_height="422dp"
+                android:layout_below="@+id/button"
+                android:layout_marginTop="30sp" />
+
+            <ImageButton
+                android:id="@+id/startButton"
+                android:layout_width="175dp"
+                android:layout_height="175dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="100sp"
+                android:adjustViewBounds="true"
+                android:cropToPadding="false"
+                android:scaleType="fitCenter"
+                android:src="@drawable/play" />
 
             <TextView
                 android:id="@+id/xValue"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30sp" />
 
@@ -47,31 +111,16 @@
                 android:layout_below="@+id/yValue"
                 android:layout_marginTop="30sp" />
 
-
             <Button
-                android:id="@+id/pauseButton"
+                android:id="@+id/again"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 android:layout_below="@+id/zValue"
-                android:onClick="pauseDetection"
-                android:text="PAUSE" />
-
-            <com.google.android.gms.maps.MapView
-                android:id="@+id/map"
-                android:layout_width="match_parent"
-                android:layout_height="422dp"
-                android:layout_below="@+id/pauseButton"
-                android:layout_marginTop="30sp"
-                tools:ignore="SpeakableTextPresentCheck" />
-
-            <TextView
-                android:id="@+id/altitude"
-                android:layout_width="match_parent"
-                android:layout_height="30sp"
-                android:text="TextView" />
-
+                android:text="Do it again" />
 
         </LinearLayout>
-    </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+</LinearLayout>
