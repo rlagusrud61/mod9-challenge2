@@ -73,17 +73,17 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     GoogleMap googleMap;
 
-    ArrayList<Float> accel_x = new ArrayList<Float>();
-    ArrayList<Float> accel_y = new ArrayList<Float>();
-    ArrayList<Float> accel_z = new ArrayList<Float>();
-    ArrayList<Double> accel_mag = new ArrayList<Double>();
+    //ArrayList<Float> accel_x = new ArrayList<Float>();
+    //ArrayList<Float> accel_y = new ArrayList<Float>();
+    //ArrayList<Float> accel_z = new ArrayList<Float>();
+    ArrayList<Double> accel_mag = new ArrayList<Double>(); //list with magnitudes of acceleration
 
     boolean firstDetection = false;
     boolean speedbump = false;
     boolean anomaly = false;
 
-    final int dt = 200000;
-    final float sensitivity = 6;
+    final int dt = 200000; //time between accelerometer event in us
+    final float sensitivity = 6; // threshold acceleration
     long time = 0;
     boolean startTime = true;
 
@@ -97,12 +97,12 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     //StorageReference coordinates = storageRef.getParent().child("SensorActivity");
 
 
-    private float average(ArrayList<Double> input) {
+    private float average(ArrayList<Double> input) { //calculate average of an arraylist of any size
         float temp = 0;
-        for (int i=0; i<input.size();i++) {
+        for (int i=0; i<input.size();i++) { // sum all elements
             temp += input.get(i);
         }
-        return temp/input.size();
+        return temp/input.size(); // divide summed up elements by the number of elements
     }
 
 
@@ -281,25 +281,25 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     }
                 }
             } else {
-                if (speedbump || anomaly) {
-                    if (startTime) {
+                if (speedbump || anomaly) { //if there is an anomaly or speedbump, a message is displayed for about 2 seconds
+                    if (startTime) { //start a timer
                         time = System.nanoTime();
                         startTime = false;
                     }
-                    if (time + 2000000000 < System.nanoTime()) {
+                    if (time + 2000000000 < System.nanoTime()) { //stop the message after 2 seconds
                         anomaly = false;
                         speedbump = false;
                         startTime = true;
-                    } else {
-                        if (speedbump) yValue.setText("speedbump");
-                        if (anomaly) yValue.setText("anomaly");
+                    } else { //set the message. currently happens on every sensorchange, but should only happen once
+                        if (speedbump) xValue.setText("normal road bump or slope");
+                        if (anomaly) xValue.setText("anomaly");
                     }
-                } else {
+                } else { //if there is no message to display check for anomalies
                     firstDetection = mag > sensitivity;
                     yValue.setText("");
                 }
 
-                xValue.setText("magnitude - gravity: " + mag);
+                //xValue.setText("magnitude - gravity: " + mag);
             }
         }
     }
