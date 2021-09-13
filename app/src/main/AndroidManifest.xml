@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.challenge_1">
+    package="com.example.challenge2">
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -22,7 +22,7 @@
             android:value="AIzaSyDaGFgtmNx64pdPn3RM4D4thylCWEFG3eM" />
 
         <!--below is the code for default activity which is Main Activity-->
-        <activity android:name=".SensorActivity"
+        <activity android:name="com.example.challenge2.SensorActivity"
             android:exported="true">
 
             <!--Inside this activity you should be having below code for

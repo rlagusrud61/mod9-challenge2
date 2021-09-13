@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">538157396465-277mdqs62updi5ahobsftfe8201ka84k.apps.googleusercontent.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">538157396465</string>
+    <string name="google_api_key" translatable="false">AIzaSyA2FN6qjCTuXIaUCXGu35Pbr-mGV91M6p4</string>
+    <string name="google_app_id" translatable="false">1:538157396465:android:48898f2f1816d313b2d450</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyA2FN6qjCTuXIaUCXGu35Pbr-mGV91M6p4</string>
+    <string name="google_storage_bucket" translatable="false">utchallenge1.appspot.com</string>
+    <string name="project_id" translatable="false">utchallenge1</string>
+</resources>

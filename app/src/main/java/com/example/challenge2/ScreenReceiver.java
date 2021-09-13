@@ -1,4 +1,4 @@
-package com.example.challenge_1;
+package com.example.challenge2;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
