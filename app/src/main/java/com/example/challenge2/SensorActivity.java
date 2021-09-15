@@ -102,6 +102,9 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     double lat = 0; // 52.213453
     double longi = 0; // 6.879420
 
+    double N = 2;
+    double C = 0;
+
     GoogleMap googleMap;
 
     @Override
@@ -303,10 +306,16 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
      */
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
+        double tx = 0;
+        double rx = 0;
+        double d = 0;
 
         if (beacons.size() != 0){
-            for (Beacon beacon : beacons){
-                Log.d(TAG, "Beacon detected: " + beacon);
+            for (Beacon beacon : beacons) {
+                tx = beacon.getTxPower();
+                rx = beacon.getRssi();
+                d = Math.pow(10,((tx - rx + C)/(10*N)));
+                Log.d(TAG, "Beacon detected: " + beacon + " signal strength: " + rx + " tx power: " + tx + " distance?: " + d);
             }
         } else {
             Log.d(TAG, "No beacons were detected");
