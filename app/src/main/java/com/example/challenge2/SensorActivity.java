@@ -1,6 +1,7 @@
 package com.example.challenge2;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
@@ -17,9 +18,13 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.ActivityTransitionEvent;
+import com.google.android.gms.location.ActivityTransitionResult;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -35,8 +40,19 @@ import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionRequest;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import android.content.BroadcastReceiver;
+
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static android.view.View.GONE;
 
@@ -52,11 +68,20 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     // Search for beacons
     private static Region region;
 
+    // Scan time for beacons (6 seconds)
     private static final long SCAN_TIME = 6000l;
     private static final String BECONS_CLOSE_BY = "BeaconsCloseBy";
 
     // Program is running or is on pause
     private boolean running = false;
+
+    // Create list of ActivityTransition objects (walking, still)
+    private List<ActivityTransition> activityTransitionList;
+
+    private ActivityRecognitionClient client;
+
+    private PendingIntent pendingIntent;
+
     // ----------------------------------------
 
 
@@ -64,7 +89,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private ScreenReceiver screenReceiver;
 
     // Front-End components
-    TextView xValue, yValue, introText1, introText2, introText3;
+    TextView introText1, introText2, activity;
     ImageButton startButton;
     Button again;
     LinearLayout linearLayout;
@@ -88,10 +113,10 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         // Initialize front-end (buttons, text, map...)
         introText1 = findViewById(R.id.introText1);
         introText2 = findViewById(R.id.introText2);
-        introText3 = findViewById(R.id.introText3);
         startButton = findViewById(R.id.startButton);
         again = findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
+        activity = findViewById(R.id.activity);
 
         startButton.setOnClickListener(this);
 
@@ -113,6 +138,61 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         region = new Region(BECONS_CLOSE_BY, identifiers);
 
+            // List of activity transitions to track (still or walking)
+        activityTransitionList = new ArrayList<>();
+
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+
+        Intent intent = new Intent();
+        pendingIntent = PendingIntent.getBroadcast(SensorActivity.this, 0, intent, 0);
+
+        // listen for activity changes.
+        ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
+
+        // transitions Updates
+        Task<Void> task = ActivityRecognition.getClient(this).requestActivityTransitionUpdates(request, pendingIntent);
+
+        task.addOnSuccessListener(
+                new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        Log.d(TAG, "onSuccess");
+                    }
+                });
+
+        task.addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Transitions Api could NOT be registered: " + e);
+
+                    }
+                });
+
+        if (ActivityTransitionResult.hasResult(intent)){
+            Log.d(TAG, "has entered here");
+            ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
+            for (ActivityTransitionEvent event : result.getTransitionEvents()) {
+                activity.setText(event.getActivityType() + " " + event.getTransitionType());
+            }
+        } else {
+            Log.d(TAG, "has not entered here");
+        }
         // ----------------------------------------
 
         // initialize ScreenReceiver for tracking screen state changes
@@ -181,6 +261,10 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         // Change the icon to the pause symbol
         startButton.setImageResource(R.drawable.stop);
 
+        // Change text
+        introText1.setText("Searching for beacons ...");
+        introText2.setText(" ");
+
         // Time to scan for beacons (6 seconds)
         beaconManager.setForegroundBetweenScanPeriod(SCAN_TIME);
 
@@ -229,8 +313,14 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         // Change the icon to the start symbol
         startButton.setImageResource(R.drawable.play);
 
-        // Hide icon
+        // Hide icon and text
         startButton.setVisibility(View.GONE);
+        introText1.setVisibility(View.GONE);
+        introText2.setVisibility(View.GONE);
+
+        // Show map and Again Button
+        mapView.setVisibility(View.VISIBLE);
+        again.setVisibility(View.VISIBLE);
 
         // Stop the process of detection
         try {
@@ -244,8 +334,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         beaconManager.unbind(this);
 
         // TODO: Buttons and text gone, Map appears with current location
-        // Todo: Maybe it is an idea to first check if someone is inside a building or outside
-        // If inside, then use beacons. Else, use gps.
 
     }
 
@@ -262,6 +350,16 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             float zoomLevel = 15f;
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
         }
+    }
+
+    @Override
+    public void onLocationChanged(@NonNull List<Location> locations) {
+
+    }
+
+    @Override
+    public void onFlushComplete(int requestCode) {
+
     }
 
     @Override
@@ -302,6 +400,11 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
 

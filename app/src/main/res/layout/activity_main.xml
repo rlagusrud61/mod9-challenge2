@@ -29,7 +29,7 @@
                 android:ems="50"
                 android:gravity="center"
                 android:scaleType="fitCenter"
-                android:text="Press the button to start "
+                android:text="Press the button to "
                 android:layout_marginTop="20dp"
                 android:background="#00000000"
                 android:fontFamily="@font/quicksand"
@@ -43,31 +43,11 @@
                 android:ems="50"
                 android:gravity="center"
                 android:scaleType="fitCenter"
-                android:text="detecting the beacons"
+                android:text="display your current location"
                 android:background="#00000000"
                 android:fontFamily="@font/quicksand"
                 android:textSize="20sp"
                 android:textColor="@color/white" />
-
-            <TextView
-                android:id="@+id/introText3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ems="50"
-                android:gravity="center"
-                android:scaleType="fitCenter"
-                android:text="around you"
-                android:background="#00000000"
-                android:fontFamily="@font/quicksand"
-                android:textSize="20sp"
-                android:textColor="@color/white" />
-
-            <!--<Button
-                android:id="@+id/button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bike Path Anomaly Detection"
-                app:backgroundTint="#4CAF50" />-->
 
             <com.google.android.gms.maps.MapView
                 android:id="@+id/map"
@@ -95,6 +75,15 @@
                 android:visibility="gone"
                 android:layout_below="@+id/yValue"
                 android:text="Do it again" />
+
+            <TextView
+                android:id="@+id/activity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:gravity="center"
+                android:layout_marginTop="30sp" />
 
         </LinearLayout>
 
