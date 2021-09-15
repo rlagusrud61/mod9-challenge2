@@ -66,6 +66,7 @@
                 android:cropToPadding="false"
                 android:scaleType="fitCenter"
                 android:background="@android:color/transparent"
+                android:onClick="onClickEnableOrDisableActivityRecognition"
                 android:src="@drawable/play" />
 
             <Button

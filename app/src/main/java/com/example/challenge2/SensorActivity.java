@@ -1,6 +1,7 @@
 package com.example.challenge2;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -11,6 +12,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.transition.Transition;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -19,6 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -36,6 +40,7 @@ import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
+import org.altbeacon.beacon.BuildConfig;
 import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
@@ -50,9 +55,12 @@ import com.google.android.gms.tasks.Task;
 import android.content.BroadcastReceiver;
 
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import static android.view.View.GONE;
 
@@ -70,14 +78,20 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     // Scan time for beacons (6 seconds)
     private static final long SCAN_TIME = 6000l;
-    private static final String BECONS_CLOSE_BY = "BeaconsCloseBy";
+    private static final String BEACONS_CLOSE_BY = "BeaconsCloseBy";
 
     // Program is running or is on pause
     private boolean running = false;
 
     // Create list of ActivityTransition objects (walking, still)
-    private List<ActivityTransition> activityTransitionList;
 
+    // Action fired when transitions are triggered.
+    private boolean activityTrackingEnabled;
+
+    private final String TRANSITIONS_RECEIVER_ACTION =
+            BuildConfig.LIBRARY_PACKAGE_NAME + "TRANSITIONS_RECEIVER_ACTION";
+    private List<ActivityTransition> activityTransitionList;
+    private TransitionsReceiver transitionsReceiver;
     private ActivityRecognitionClient activityRecognitionClient;
 
     private PendingIntent pendingIntent;
@@ -136,8 +150,10 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         // Beacon identifiers. Beacons with all possible identifiers (empty arrayList)
         ArrayList<Identifier> identifiers = new ArrayList<>();
 
-        region = new Region(BECONS_CLOSE_BY, identifiers);
+        region = new Region(BEACONS_CLOSE_BY, identifiers);
 
+
+        activityTrackingEnabled=false;
             // List of activity transitions to track (still or walking)
         activityTransitionList = new ArrayList<>();
 
@@ -158,41 +174,14 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
                 .build());
 
-        Intent intent = new Intent(this,PermissionRationalActivity.class);
+        Intent intent = new Intent(TRANSITIONS_RECEIVER_ACTION);
         pendingIntent = PendingIntent.getBroadcast(SensorActivity.this, 0, intent, 0);
 
-        // listen for activity changes.
-        ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
+        // Register a BroadcastReceiver to listen for activity transitions.
+        registerReceiver(transitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
 
-        // transitions Updates
-        Task<Void> task = ActivityRecognition.getClient(this).requestActivityTransitionUpdates(request, pendingIntent);
+        transitionsReceiver = new TransitionsReceiver();
 
-        task.addOnSuccessListener(
-                new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        Log.d(TAG, "onSuccess");
-                    }
-                });
-
-        task.addOnFailureListener(
-                new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Transitions Api could NOT be registered: " + e);
-
-                    }
-                });
-
-        if (ActivityTransitionResult.hasResult(intent)){
-            Log.d(TAG, "has entered here");
-            ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
-            for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                activity.setText(event.getActivityType() + " " + event.getTransitionType());
-            }
-        } else {
-            Log.d(TAG, "has not entered here");
-        }
         // ----------------------------------------
 
         // initialize ScreenReceiver for tracking screen state changes
@@ -208,20 +197,10 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             }, 10);
         }
 
-        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] {
-                    Manifest.permission.ACTIVITY_RECOGNITION
-            },45);
-        }
 
-
-
-        // OnCreate
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {
@@ -233,11 +212,44 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     }
 
+    public void onClickEnableOrDisableActivityRecognition(View view) {
+
+        // TODO: Enable/Disable activity tracking and ask for permissions if needed.
+        if (activityRecognitionPermissionApproved()) {
+
+            if (activityTrackingEnabled) {
+                disableActivityTransitions();
+
+            } else {
+                enableActivityTransitions();
+            }
+
+        } else {
+            // Request permission and start activity for result. If the permission is approved, we
+            // want to make sure we start activity recognition tracking.
+            Intent startIntent = new Intent(this, PermissionRationalActivity.class);
+            startActivityForResult(startIntent, 0);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        // Start activity recognition if the permission was approved.
+        Log.d(TAG, "Activitytrackingenabled: " + activityTrackingEnabled );
+        if (activityRecognitionPermissionApproved() && !activityTrackingEnabled) {
+            Log.d(TAG,"Gonna enable activity transitions");
+            enableActivityTransitions();
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
     // Start button
     @Override
     public void onClick(View view){
         // Press button to start application
         Log.d(TAG, "has entered onClick");
+        onClickEnableOrDisableActivityRecognition(startButton);
         if (view.equals(startButton) && !running){
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{
@@ -260,6 +272,61 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         }
     }
 
+    private boolean activityRecognitionPermissionApproved(){
+        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACTIVITY_RECOGNITION
+        );
+    }
+    private void enableActivityTransitions(){
+        Log.d(TAG,"enableActivityTransitions");
+
+        ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
+
+        // Register for Transitions Updates.
+        Task<Void> task =
+                ActivityRecognition.getClient(this)
+                        .requestActivityTransitionUpdates(request, pendingIntent);
+
+
+        task.addOnSuccessListener(
+                new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        activityTrackingEnabled = true;
+                        Log.d(TAG,"Transitions Api was successfully registered.");
+                    }
+                });
+        task.addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Transitions Api could NOT be registered: " + e);
+
+                    }
+                });
+
+    }
+
+    private void disableActivityTransitions(){
+        Log.d(TAG, "disableActivityTransitions()");
+
+        ActivityRecognition.getClient(this).removeActivityTransitionUpdates(pendingIntent)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        activityTrackingEnabled = false;
+                        Log.d(TAG, "Transitions successfully unregistered.");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG,"Transitions could not be unregistered: " + e);
+                    }
+                });
+
+    }
 
     private void StartDetectingBeacons() {
         Log.d(TAG, "has entered StartDetectingBeacons");
@@ -342,7 +409,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         beaconManager.removeAllRangeNotifiers();
         beaconManager.unbind(this);
 
-        // TODO: Buttons and text gone, Map appears with current location
 
     }
 
@@ -370,7 +436,14 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     public void onFlushComplete(int requestCode) {
 
     }
-    
+
+    @Override
+    protected void onStart(){
+        super.onStart();
+
+        //Register BroadcastReceiver to listen for activity transitions
+        registerReceiver(transitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
+    }
     @Override
     protected void onResume() {
         super.onResume();
@@ -378,12 +451,19 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     protected void onPause() {
+        // Disable activity transitions when user leaves the app
+        if (activityTrackingEnabled) {
+            disableActivityTransitions();
+        }
         super.onPause();
+
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        // Unregister activity transition receiver when user leaves the app.
+//        unregisterReceiver(transitionsReceiver);
     }
 
 
@@ -415,6 +495,58 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
 
+    }
+
+    private static String toActivityString(int activity) {
+        switch (activity) {
+            case DetectedActivity.STILL:
+                return "STILL";
+            case DetectedActivity.WALKING:
+                return "WALKING";
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    private static String toTransitionType(int transitionType) {
+        switch (transitionType) {
+            case ActivityTransition.ACTIVITY_TRANSITION_ENTER:
+                return "ENTER";
+            case ActivityTransition.ACTIVITY_TRANSITION_EXIT:
+                return "EXIT";
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    public class TransitionsReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            Log.d(TAG, "onReceive(): " + intent);
+
+            if (!TextUtils.equals(TRANSITIONS_RECEIVER_ACTION, intent.getAction())) {
+
+                Log.d(TAG, "Unsupported action received by TransitionsReceiver : " + intent.getAction());
+            }
+
+            // Extract activity transition information from listener.
+            if (ActivityTransitionResult.hasResult(intent)) {
+
+                ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
+
+                for (ActivityTransitionEvent event : result.getTransitionEvents()) {
+
+                    String info = "Transition: " + toActivityString(event.getActivityType()) +
+                            " (" + toTransitionType(event.getTransitionType()) + ")" + "   " +
+                            new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
+
+                    Log.d(TAG, info);
+                }
+            }
+
+        }
     }
 
 };
