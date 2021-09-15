@@ -78,7 +78,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     // Create list of ActivityTransition objects (walking, still)
     private List<ActivityTransition> activityTransitionList;
 
-    private ActivityRecognitionClient client;
+    private ActivityRecognitionClient activityRecognitionClient;
 
     private PendingIntent pendingIntent;
 
@@ -158,7 +158,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
                 .build());
 
-        Intent intent = new Intent();
+        Intent intent = new Intent(this,PermissionRationalActivity.class);
         pendingIntent = PendingIntent.getBroadcast(SensorActivity.this, 0, intent, 0);
 
         // listen for activity changes.
@@ -201,11 +201,20 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         screenReceiver = new ScreenReceiver();
         registerReceiver(screenReceiver,filter);
 
+        // Asking for location permission
         if (ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION
             }, 10);
         }
+
+        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[] {
+                    Manifest.permission.ACTIVITY_RECOGNITION
+            },45);
+        }
+
+
 
         // OnCreate
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -361,7 +370,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     public void onFlushComplete(int requestCode) {
 
     }
-
+    
     @Override
     protected void onResume() {
         super.onResume();
