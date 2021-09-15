@@ -100,7 +100,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
 
     private LocationManager locationManager;
-    private ScreenReceiver screenReceiver;
 
     // Front-End components
     TextView introText1, introText2, activity;
@@ -113,8 +112,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    double lat = 0; // 52.213453
-    double longi = 0; // 6.879420
+    double lat = 52.2393907; // Ravelijn coordinates
+    double longi = 6.8555544; //
 
     GoogleMap googleMap;
 
@@ -131,6 +130,14 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         again = findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
         activity = findViewById(R.id.activity);
+
+        Bundle mapViewBundle = null;
+        if (savedInstanceState != null) {
+            mapViewBundle = savedInstanceState.getBundle(MAPVIEW_BUNDLE_KEY);
+        }
+        mapView = findViewById(R.id.map);
+        mapView.onCreate(mapViewBundle);
+        mapView.getMapAsync(this);
 
         startButton.setOnClickListener(this);
 
@@ -184,12 +191,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         // ----------------------------------------
 
-        // initialize ScreenReceiver for tracking screen state changes
-        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        screenReceiver = new ScreenReceiver();
-        registerReceiver(screenReceiver,filter);
-
         // Asking for location permission
         if (ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{
@@ -202,13 +203,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
 
-        Bundle mapViewBundle = null;
-        if (savedInstanceState != null) {
-            mapViewBundle = savedInstanceState.getBundle(MAPVIEW_BUNDLE_KEY);
-        }
-        mapView = findViewById(R.id.map);
-        mapView.onCreate(mapViewBundle);
-        mapView.getMapAsync(this);
+
 
     }
 
@@ -251,6 +246,11 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         Log.d(TAG, "has entered onClick");
         onClickEnableOrDisableActivityRecognition(startButton);
         if (view.equals(startButton) && !running){
+            if (mapView.getVisibility() == View.VISIBLE) {
+                float zoomLevel = 20f;
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
+            }
+
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{
                         android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -387,7 +387,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         running = false;
 
         // Change the icon to the start symbol
-        startButton.setImageResource(R.drawable.play);
+        startButton.setImageResource(R.drawable.locationbutton);
 
         // Hide icon and text
         startButton.setVisibility(View.GONE);
@@ -421,14 +421,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
             requested = false;
         }
-        if (mapView.getVisibility() == View.VISIBLE) {
-            float zoomLevel = 15f;
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
-        }
-    }
-
-    @Override
-    public void onLocationChanged(@NonNull List<Location> locations) {
 
     }
 
