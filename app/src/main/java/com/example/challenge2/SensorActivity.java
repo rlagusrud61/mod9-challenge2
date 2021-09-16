@@ -9,6 +9,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -21,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -63,7 +68,7 @@ import java.util.Map;
 import static android.view.View.GONE;
 
 // View.OnClickListener, BeaconConsumer, RangeNotifier
-public class SensorActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener, View.OnClickListener, RangeNotifier, BeaconConsumer {
+public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener, View.OnClickListener, RangeNotifier, BeaconConsumer {
 
     // sending log output TAG
     private static final String TAG = "MyActivity";
@@ -83,6 +88,12 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private BluetoothAdapter bluetoothAdapter;
 
     HashMap<String,ArrayList> data = new HashMap<String,ArrayList>();
+
+    // Step Counter
+    private SensorManager sensorManager;
+    private Sensor stepcounter;
+    private boolean counter_present;
+    int stepcount = 0;
 
     // ----------------------------------------
 
@@ -196,6 +207,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         again = findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
         activity = findViewById(R.id.activity);
+        activity.setText("0");
         bluetooth = findViewById(R.id.bluetooth);
 
         startButton.setOnClickListener(this);
@@ -205,7 +217,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         try {
             data = this.getData();
-            Log.d(TAG, "beacon info: " + data.get("529"));
+            //Log.d(TAG, "beacon info: " + data.get("529").get(5));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -255,6 +267,16 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         mapView = findViewById(R.id.map);
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
+
+        // Step counter
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)!= null) {
+            stepcounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+            counter_present = true;
+        } else{
+            counter_present = false;
+        }
     }
 
     // Start button
@@ -285,6 +307,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             introText1.setVisibility(View.VISIBLE);
             introText2.setVisibility(View.VISIBLE);
             startButton.setVisibility(View.VISIBLE);
+            activity.setVisibility(View.VISIBLE);
             reset = false;
 
             // Stop the process of detection
@@ -336,6 +359,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         beaconManager.bind(this);
 
         mapView.setVisibility(View.VISIBLE);
+        activity.setVisibility(View.GONE);
         again.setVisibility(View.VISIBLE);
         introText1.setVisibility(View.GONE);
         introText2.setVisibility(View.GONE);
@@ -531,4 +555,17 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         return data;
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        Log.d(TAG,"OnSensorChanged");
+        if (sensorEvent.sensor == stepcounter){
+            stepcount = (int) sensorEvent.values[0];
+            activity.setText(String.valueOf(stepcount));
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+
+    }
 };
