@@ -5,7 +5,7 @@
     android:id="@+id/layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/app_challenge1"
+    android:background="#f1e3a7"
     android:orientation="vertical">
 
     <LinearLayout
@@ -34,7 +34,7 @@
                 android:background="#00000000"
                 android:fontFamily="@font/quicksand"
                 android:textSize="20sp"
-                android:textColor="@color/white" />
+                android:textColor="#141414" />
 
             <TextView
                 android:id="@+id/introText2"
@@ -47,7 +47,7 @@
                 android:background="#00000000"
                 android:fontFamily="@font/quicksand"
                 android:textSize="20sp"
-                android:textColor="@color/white" />
+                android:textColor="#141414" />
 
             <com.google.android.gms.maps.MapView
                 android:id="@+id/map"
@@ -66,7 +66,7 @@
                 android:cropToPadding="false"
                 android:scaleType="fitCenter"
                 android:background="@android:color/transparent"
-                android:src="@drawable/play" />
+                android:src="@drawable/locationbutton" />
 
             <Button
                 android:id="@+id/again"
