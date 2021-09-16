@@ -21,7 +21,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -43,29 +42,19 @@ import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 
 import android.content.BroadcastReceiver;
 
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -98,6 +87,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private LocationManager locationManager;
     private ScreenReceiver screenReceiver;
 
+    Location location;
+
     // Front-End components
     TextView introText1, introText2, activity;
     ImageButton startButton;
@@ -105,7 +96,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     LinearLayout linearLayout;
     ListView bluetooth;
 
-    Excel excel = new Excel();
     Map<String,ArrayList> beacon_info = new HashMap<>();
 
     Boolean requested = true;
@@ -204,15 +194,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         }
 
         Log.d(TAG, "beacon info: " + beacon_info.get(0));
-/*
-        try {
-            beacon_info = excel.getData();
-            System.out.println(beacon_info.get("480"));
-            Log.d(TAG, "beacon info: " + beacon_info.get(0));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-*/
 
         // Initialize Beacon manager
         beaconManager = BeaconManager.getInstanceForApplication(this);
@@ -231,10 +212,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         ArrayList<Identifier> identifiers = new ArrayList<>();
 
         region = new Region(BECONS_CLOSE_BY, identifiers);
-
-        // ----------------------------------------
-
-        // ----------------------------------------
 
         // initialize ScreenReceiver for tracking screen state changes
         IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
@@ -380,7 +357,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             double d = 0;
 
             for (Beacon beacon : beacons){
-                double test = beacon.getDistance()
+                double test = beacon.getDistance();
                 tx = beacon.getTxPower();
                 rx = beacon.getRssi();
                 d = Math.pow(10,((tx - rx + C)/(10*N)));
@@ -397,21 +374,13 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.d(TAG,"onLocationChanged");
         if (requested) {
+            float zoomLevel = 16f;
             lat = location.getLatitude();
             longi = location.getLongitude();
-            googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
-            requested = false;
-        }
-        if (mapView.getVisibility() == View.VISIBLE) {
-            float zoomLevel = 15f;
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
         }
-    }
-
-    @Override
-    public void onLocationChanged(@NonNull List<Location> locations) {
-
     }
 
     @Override
@@ -442,6 +411,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         System.out.println("OnMapReady" + googleMap);
         mapView.onResume();
         mapView.onEnterAmbient(null);
+        map.getUiSettings().setIndoorLevelPickerEnabled(true);
         // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
         mapView.setVisibility(GONE);
     }
