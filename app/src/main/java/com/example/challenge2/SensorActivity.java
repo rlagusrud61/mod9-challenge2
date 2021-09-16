@@ -170,6 +170,18 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         return fixed_beacons;
     }
 
+    public double[] xy_to_coords(double[] xy){
+        double[] coords = {0,0};
+        double c_lat = 1.111206896555222e+05;
+        double c_long = 6.799157303370348e+04;
+        double long_0 = 6.854982000000000;
+        double lat_0 = 52.238976000000000;
+
+        coords[0] = xy[1]/c_lat + lat_0;
+        coords[1] = xy[0]/c_long + long_0;
+        return coords;
+    }
+
 
 
     @Override
