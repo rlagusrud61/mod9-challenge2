@@ -1,12 +1,14 @@
 package com.example.challenge2;
 
 import android.Manifest;
-import android.app.PendingIntent;
+
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -16,19 +18,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
-import com.google.android.gms.location.ActivityRecognitionClient;
-import com.google.android.gms.location.ActivityTransitionEvent;
-import com.google.android.gms.location.ActivityTransitionResult;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.IndoorBuilding;
+import com.google.android.gms.maps.model.IndoorLevel;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -39,20 +41,33 @@ import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import com.google.android.gms.location.ActivityRecognition;
-import com.google.android.gms.location.ActivityTransition;
-import com.google.android.gms.location.ActivityTransitionRequest;
-import com.google.android.gms.location.DetectedActivity;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import android.content.BroadcastReceiver;
 
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static android.view.View.GONE;
 
@@ -75,15 +90,13 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     // Program is running or is on pause
     private boolean running = false;
 
-    // Create list of ActivityTransition objects (walking, still)
-    private List<ActivityTransition> activityTransitionList;
+    // For bluetooth devices recognition
+    private BroadcastReceiver broadcastReceiver;
+    private BluetoothAdapter bluetoothAdapter;
 
-    private ActivityRecognitionClient activityRecognitionClient;
-
-    private PendingIntent pendingIntent;
+    HashMap<String,ArrayList> data = new HashMap<String,ArrayList>();
 
     // ----------------------------------------
-
 
     private LocationManager locationManager;
     private ScreenReceiver screenReceiver;
@@ -93,6 +106,10 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     ImageButton startButton;
     Button again;
     LinearLayout linearLayout;
+    ListView bluetooth;
+
+    Excel excel = new Excel();
+    Map<String,ArrayList> beacon_info = new HashMap<>();
 
     Boolean requested = true;
 
@@ -107,21 +124,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     GoogleMap googleMap;
 
-    public double[] triangulate_common_chords(double[] beacon1, double[] beacon2, double[] beacon3) {
-        double pos[] = {0,0};
-        double x12 = beacon1[0] - beacon2[0];
-        double x23 = beacon2[0] - beacon3[0];
-        double y12 = beacon1[1] - beacon2[1];
-        double y23 = beacon2[1] - beacon3[1];
-
-        double c12 = beacon1[0]*beacon1[0] - beacon2[0]*beacon2[0] + beacon1[1]*beacon1[1] - beacon2[1]*beacon2[1] - (beacon1[2]*beacon1[2] - beacon2[2]*beacon2[2]);
-        double c23 = (beacon2[0]*beacon2[0] - beacon3[0]*beacon3[0]) + (beacon2[1]*beacon2[1] - beacon3[1]*beacon3[1]) - (beacon2[2]*beacon2[2] - beacon3[2]*beacon3[2]);
-
-        pos[0] = (((x23/x12)*c12)-c23)/((2*(x23/x12)*y12)-(2*y23));
-        pos[1] = 1/x12 * (-y12*pos[0]+c12/2);
-        return pos;
-    }
-
     @Override
     public final void onCreate(Bundle savedInstanceState) {
 
@@ -135,8 +137,29 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         again = findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
         activity = findViewById(R.id.activity);
+        bluetooth = findViewById(R.id.bluetooth);
 
         startButton.setOnClickListener(this);
+
+        data = new HashMap<>();
+
+        try {
+            data = this.getData();
+            Log.d(TAG, "beacon info: " + data.get("529"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Log.d(TAG, "beacon info: " + beacon_info.get(0));
+/*
+        try {
+            beacon_info = excel.getData();
+            System.out.println(beacon_info.get("480"));
+            Log.d(TAG, "beacon info: " + beacon_info.get(0));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
 
         // Initialize Beacon manager
         beaconManager = BeaconManager.getInstanceForApplication(this);
@@ -156,83 +179,21 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         region = new Region(BECONS_CLOSE_BY, identifiers);
 
-            // List of activity transitions to track (still or walking)
-        activityTransitionList = new ArrayList<>();
+        // ----------------------------------------
 
-        activityTransitionList.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build());
-        activityTransitionList.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build());
-        activityTransitionList.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build());
-        activityTransitionList.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build());
-
-        Intent intent = new Intent(this,PermissionRationalActivity.class);
-        pendingIntent = PendingIntent.getBroadcast(SensorActivity.this, 0, intent, 0);
-
-        // listen for activity changes.
-        ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
-
-        // transitions Updates
-        Task<Void> task = ActivityRecognition.getClient(this).requestActivityTransitionUpdates(request, pendingIntent);
-
-        task.addOnSuccessListener(
-                new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        Log.d(TAG, "onSuccess");
-                    }
-                });
-
-        task.addOnFailureListener(
-                new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Transitions Api could NOT be registered: " + e);
-
-                    }
-                });
-
-        if (ActivityTransitionResult.hasResult(intent)){
-            Log.d(TAG, "has entered here");
-            ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
-            for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                activity.setText(event.getActivityType() + " " + event.getTransitionType());
-            }
-        } else {
-            Log.d(TAG, "has not entered here");
-        }
         // ----------------------------------------
 
         // initialize ScreenReceiver for tracking screen state changes
         IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         screenReceiver = new ScreenReceiver();
-        registerReceiver(screenReceiver,filter);
+        registerReceiver(screenReceiver, filter);
 
-        // Asking for location permission
-        if (ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION
             }, 10);
         }
-
-        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] {
-                    Manifest.permission.ACTIVITY_RECOGNITION
-            },45);
-        }
-
-
 
         // OnCreate
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -248,12 +209,11 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         mapView = findViewById(R.id.map);
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
-
     }
 
     // Start button
     @Override
-    public void onClick(View view){
+    public void onClick(View view) {
         // Press button to start application
         Log.d(TAG, "has entered onClick");
         if (view.equals(startButton) && !running){
@@ -262,20 +222,48 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                         android.Manifest.permission.ACCESS_FINE_LOCATION
                 }, 10);
             }
-            BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
             if (bluetoothAdapter.isEnabled()){
                 StartDetectingBeacons();
+                ListAllBluetoothDevices();
             } else {
                 // Ask the user to enable bluetooth
                 Intent ask_bluetooth_enable = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(ask_bluetooth_enable, 1);
             }
 
-        // Press button to pause application
+            // Press button to pause application
         } else if (view.equals(startButton) && running){
             StopDetectingBeacons();
         }
+    }
+
+
+
+
+    private void ListAllBluetoothDevices() {
+
+        bluetoothAdapter  = BluetoothAdapter.getDefaultAdapter();
+
+        bluetoothAdapter.startDiscovery();
+
+        ArrayList<String> arrayList = new ArrayList<>();
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equals(BluetoothDevice.ACTION_FOUND)) {
+                    BluetoothDevice bluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    // Todo: Might be an idea to only display the ones you have not found before. check if it already does that
+                    Log.d(TAG, "BLUETOOTH DEVICE FOUND: NAME " + bluetoothDevice.getName() + "WITH MAC ADDRESS: " + bluetoothDevice.getAddress());
+                    arrayList.add(bluetoothDevice.getName());
+                }
+            }
+        };
+        IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(broadcastReceiver, intentFilter);
     }
 
 
@@ -321,16 +309,19 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
      */
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
-        double tx = 0;
-        double rx = 0;
-        double d = 0;
 
         if (beacons.size() != 0){
-            for (Beacon beacon : beacons) {
+            double tx = 0;
+            double rx = 0;
+            double d = 0;
+
+            for (Beacon beacon : beacons){
                 tx = beacon.getTxPower();
                 rx = beacon.getRssi();
                 d = Math.pow(10,((tx - rx + C)/(10*N)));
-                Log.d(TAG, "Beacon detected: " + beacon + " signal strength: " + rx + " tx power: " + tx + " distance?: " + d);
+
+                Log.d(TAG, "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance() );
+
             }
         } else {
             Log.d(TAG, "No beacons were detected");
@@ -394,7 +385,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     public void onFlushComplete(int requestCode) {
 
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -413,7 +404,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     public void onMapReady(GoogleMap map) {
-        googleMap = map;
+        Log.d(TAG,"Has entered 3");
+        this.googleMap = map;
         System.out.println("OnMapReady" + googleMap);
         mapView.onResume();
         mapView.onEnterAmbient(null);
@@ -439,6 +431,56 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
 
+    }
+
+    public HashMap<String,ArrayList> getData() throws IOException{
+
+        try {
+
+            InputStream myInput;
+            // initialize asset manager
+            AssetManager assetManager = getAssets();
+            //  open excel sheet
+            myInput = assetManager.open("beacons-info1.xls");
+            // Create a POI File System object
+            POIFSFileSystem myFileSystem = new POIFSFileSystem(myInput);
+            // Create a workbook using the File System
+            HSSFWorkbook myWorkBook = new HSSFWorkbook(myFileSystem);
+            // Get the first sheet from workbook
+            HSSFSheet sheet = myWorkBook.getSheetAt(0);
+
+            DataFormatter formatter = new DataFormatter(Locale.US);
+
+            int lastRow = sheet.getLastRowNum();
+
+            for (int i = 0; i <= lastRow; i++) {
+                ArrayList rest = new ArrayList();
+                Row row = sheet.getRow(i);
+                Cell beacon_id_Cell = row.getCell(0);
+                String beacon_id = formatter.formatCellValue(beacon_id_Cell);
+                Cell device_name_Cell = row.getCell(1);
+                String device_name = formatter.formatCellValue(device_name_Cell);
+                Cell mac_address_Cell = row.getCell(2);
+                String mac_address = formatter.formatCellValue(mac_address_Cell);
+                Cell longitude_Cell = row.getCell(3);
+                String longitude = formatter.formatCellValue(longitude_Cell);
+                Cell latitude_Cell = row.getCell(4);
+                String longitudlatitudee = formatter.formatCellValue(latitude_Cell);
+                Cell floor_Cell = row.getCell(5);
+                String floor = formatter.formatCellValue(floor_Cell);
+
+                rest.add(device_name);
+                rest.add(mac_address);
+                rest.add(longitude);
+                rest.add(longitudlatitudee);
+                rest.add(floor);
+
+                data.put(beacon_id, rest);
+            }
+        } catch (Exception e){
+            Log.e(TAG, "error in getData: " + e.toString());
+        }
+        return data;
     }
 
 };
