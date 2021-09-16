@@ -120,6 +120,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     double N = 2;
     double C = 0;
 
+    double overlap_amount = 0.1;
+
     GoogleMap googleMap;
 
     public double[] triangulate_common_chords(double[][] beacons) {
@@ -135,6 +137,41 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         pos[0] = (((x23/x12)*c12)-c23)/((2*(x23/x12)*y12)-(2*y23));
         pos[1] = 1/x12 * (-y12*pos[0]+c12/2);
         return pos;
+    }
+
+    public double[][] prepare_common_chords(double[][] beacons) {
+        double [][] fixed_beacons = beacons;
+        boolean [] overlap_check = {false,false,false};
+
+        double r12 = beacons[0][2] + beacons[1][2];
+        double r23 = beacons[1][2] + beacons[2][2];
+        double r13 = beacons[0][2] + beacons[2][2];
+
+        double length_12 = Math.sqrt((beacons[1][0]-beacons[0][0])*(beacons[1][0]-beacons[0][0])+(beacons[1][1]-beacons[0][1])*(beacons[1][1]-beacons[0][1]));
+
+        if(length_12 > r12){
+            double dist12 = length_12-r12;
+            fixed_beacons[0][2] += (dist12 + overlap_amount)/2;
+            fixed_beacons[1][2] += (dist12 + overlap_amount)/2;
+        }
+
+        double length_23 = Math.sqrt((beacons[2][0]-beacons[1][0])*(beacons[2][0]-beacons[1][0])+(beacons[2][1]-beacons[1][1])*(beacons[2][1]-beacons[1][1]));
+
+        if(length_23 > r23){
+            double dist23 = length_23-r23;
+            fixed_beacons[1][2] += (dist23 + overlap_amount)/2;
+            fixed_beacons[2][2] += (dist23 + overlap_amount)/2;
+        }
+
+        double length_13 = Math.sqrt((beacons[2][0]-beacons[0][0])*(beacons[2][0]-beacons[0][0])+(beacons[2][1]-beacons[0][1])*(beacons[2][1]-beacons[0][1]));
+
+        if(length_13 > r13){
+            double dist13 = length_13-r13;
+            fixed_beacons[0][2] += (dist13 + overlap_amount)/2;
+            fixed_beacons[2][2] += (dist13 + overlap_amount)/2;
+        }
+
+        return fixed_beacons;
     }
 
 
@@ -343,9 +380,11 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             double d = 0;
 
             for (Beacon beacon : beacons){
+                double test = beacon.getDistance()
                 tx = beacon.getTxPower();
                 rx = beacon.getRssi();
                 d = Math.pow(10,((tx - rx + C)/(10*N)));
+
 
                 Log.d(TAG, "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance() );
 
