@@ -366,7 +366,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
 
-        HashMap<Identifier, Double> beacon_detected = new HashMap<>();
+        HashMap<String, Double> beacon_detected = new HashMap<>();
 
         if (beacons.size() != 0){
             double tx = 0;
@@ -382,7 +382,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
                 Log.d(TAG, "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance() );
 
-                beacon_detected.put(beacon.getId3(),d);
+                beacon_detected.put(beacon.getBluetoothAddress(),d);
 
             }
         } else {
