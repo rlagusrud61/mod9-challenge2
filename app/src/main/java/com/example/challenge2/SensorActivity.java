@@ -25,7 +25,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -34,7 +33,6 @@ import com.google.android.gms.maps.model.IndoorBuilding;
 import com.google.android.gms.maps.model.IndoorLevel;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -368,6 +366,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
 
+        HashMap<Identifier, Double> beacon_detected = new HashMap<>();
+
         if (beacons.size() != 0){
             double tx = 0;
             double rx = 0;
@@ -381,6 +381,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
 
                 Log.d(TAG, "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance() );
+
+                beacon_detected.put(beacon.getId3(),d);
 
             }
         } else {
@@ -450,8 +452,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         });
 
-
-
         mapView.setVisibility(GONE);
     }
 
@@ -511,13 +511,13 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 Cell floor_Cell = row.getCell(5);
                 String floor = formatter.formatCellValue(floor_Cell);
 
+                rest.add(beacon_id);
                 rest.add(device_name);
-                rest.add(mac_address);
                 rest.add(longitude);
                 rest.add(longitudlatitudee);
                 rest.add(floor);
 
-                data.put(beacon_id, rest);
+                data.put(mac_address, rest);
             }
         } catch (Exception e){
             Log.e(TAG, "error in getData: " + e.toString());
