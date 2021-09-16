@@ -87,9 +87,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private static final long SCAN_TIME = 6000l;
     private static final String BECONS_CLOSE_BY = "BeaconsCloseBy";
 
-    // Program is running or is on pause
-    private boolean running = false;
-
     // For bluetooth devices recognition
     private BroadcastReceiver broadcastReceiver;
     private BluetoothAdapter bluetoothAdapter;
@@ -112,6 +109,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     Map<String,ArrayList> beacon_info = new HashMap<>();
 
     Boolean requested = true;
+    Boolean reset = false;
 
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
@@ -157,6 +155,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         bluetooth = findViewById(R.id.bluetooth);
 
         startButton.setOnClickListener(this);
+        again.setOnClickListener(this);
 
         data = new HashMap<>();
 
@@ -234,7 +233,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     public void onClick(View view) {
         // Press button to start application
         Log.d(TAG, "has entered onClick");
-        if (view.equals(startButton) && !running){
+        if (view.equals(startButton) && !reset){
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{
                         android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -251,14 +250,27 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 startActivityForResult(ask_bluetooth_enable, 1);
             }
 
-            // Press button to pause application
-        } else if (view.equals(startButton) && running){
-            StopDetectingBeacons();
+        } else if (view.equals(again) && reset){
+            mapView.setVisibility(View.GONE);
+            again.setVisibility(View.GONE);
+            introText1.setVisibility(View.VISIBLE);
+            introText2.setVisibility(View.VISIBLE);
+            startButton.setVisibility(View.VISIBLE);
+            reset = false;
+
+            // Stop the process of detection
+            try {
+                beaconManager.stopMonitoringBeaconsInRegion(region);
+                Log.d(TAG, "Stop detecting beacons...");
+            } catch (Exception e){
+                Log.d(TAG, "An error occured while trying to stop detecting beacons" + e.getMessage());
+            }
+
+            beaconManager.removeAllRangeNotifiers();
+            beaconManager.unbind(this);
+
         }
     }
-
-
-
 
     private void ListAllBluetoothDevices() {
 
@@ -288,21 +300,18 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private void StartDetectingBeacons() {
         Log.d(TAG, "has entered StartDetectingBeacons");
 
-        // App is now running (detecting beacons)
-        running = true;
-
-        // Change the icon to the pause symbol
-        startButton.setImageResource(R.drawable.stop);
-
-        // Change text
-        introText1.setText("Searching for beacons ...");
-        introText2.setText(" ");
-
         // Time to scan for beacons (6 seconds)
         beaconManager.setForegroundBetweenScanPeriod(SCAN_TIME);
 
         // Pair with beacon service
         beaconManager.bind(this);
+
+        mapView.setVisibility(View.VISIBLE);
+        again.setVisibility(View.VISIBLE);
+        introText1.setVisibility(View.GONE);
+        introText2.setVisibility(View.GONE);
+        startButton.setVisibility(View.GONE);
+        reset = true;
 
     }
 
@@ -346,39 +355,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         }
 
     }
-
-    private void StopDetectingBeacons() {
-
-        // App is not running (stop detecting beacons)
-        running = false;
-
-        // Change the icon to the start symbol
-        startButton.setImageResource(R.drawable.play);
-
-        // Hide icon and text
-        startButton.setVisibility(View.GONE);
-        introText1.setVisibility(View.GONE);
-        introText2.setVisibility(View.GONE);
-
-        // Show map and Again Button
-        mapView.setVisibility(View.VISIBLE);
-        again.setVisibility(View.VISIBLE);
-
-        // Stop the process of detection
-        try {
-            beaconManager.stopMonitoringBeaconsInRegion(region);
-            Log.d(TAG, "Stop detecting beacons...");
-        } catch (Exception e){
-            Log.d(TAG, "An error occured while trying to stop detecting beacons" + e.getMessage());
-        }
-
-        beaconManager.removeAllRangeNotifiers();
-        beaconManager.unbind(this);
-
-        // TODO: Buttons and text gone, Map appears with current location
-
-    }
-
 
     @Override
     public void onLocationChanged(Location location) {
