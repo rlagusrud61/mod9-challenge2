@@ -24,6 +24,8 @@ import android.widget.TextView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -32,6 +34,7 @@ import com.google.android.gms.maps.model.IndoorBuilding;
 import com.google.android.gms.maps.model.IndoorLevel;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -86,6 +89,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     private LocationManager locationManager;
     private ScreenReceiver screenReceiver;
+    private FusedLocationProviderClient fusedLocationClient;
+
 
     Location location;
 
@@ -102,6 +107,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     Boolean reset = false;
 
     private MapView mapView;
+    private boolean cameraset = false;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
     double lat = 0; // 52.213453
@@ -229,8 +235,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
 
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {
@@ -379,7 +384,14 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             float zoomLevel = 16f;
             lat = location.getLatitude();
             longi = location.getLongitude();
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
+            googleMap.addMarker(new MarkerOptions().position(new LatLng(lat,longi)));
+        }
+        if (mapView.getVisibility() == View.VISIBLE){
+            if (!cameraset){
+                float zoomLevel = 20f;
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
+                cameraset=  true;
+            }
         }
     }
 
