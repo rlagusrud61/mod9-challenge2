@@ -510,12 +510,18 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 String longitudlatitudee = formatter.formatCellValue(latitude_Cell);
                 Cell floor_Cell = row.getCell(5);
                 String floor = formatter.formatCellValue(floor_Cell);
+                Cell x_Cell = row.getCell(6);
+                String x = formatter.formatCellValue(x_Cell);
+                Cell y_Cell = row.getCell(7);
+                String y = formatter.formatCellValue(y_Cell);
 
                 rest.add(beacon_id);
                 rest.add(device_name);
                 rest.add(longitude);
                 rest.add(longitudlatitudee);
                 rest.add(floor);
+                rest.add(x);
+                rest.add(y);
 
                 data.put(mac_address, rest);
             }
