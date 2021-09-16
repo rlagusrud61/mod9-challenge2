@@ -37,6 +37,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.IndoorBuilding;
 import com.google.android.gms.maps.model.IndoorLevel;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.altbeacon.beacon.Beacon;
@@ -59,6 +60,7 @@ import android.content.BroadcastReceiver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,7 +91,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private BroadcastReceiver broadcastReceiver;
     private BluetoothAdapter bluetoothAdapter;
 
-    HashMap<String, ArrayList> data = new HashMap<String, ArrayList>();
+    HashMap<String,ArrayList> data = new HashMap<String,ArrayList>();
 
     // Step Counter
     private SensorManager sensorManager;
@@ -103,6 +105,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private ScreenReceiver screenReceiver;
     private FusedLocationProviderClient fusedLocationClient;
 
+    Marker marker;
 
     Location location;
 
@@ -113,14 +116,10 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     LinearLayout linearLayout;
     ListView bluetooth;
 
-    Map<String, ArrayList> beacon_info = new HashMap<>();
+    Map<String,ArrayList> beacon_info = new HashMap<>();
 
     Boolean requested = true;
     Boolean reset = false;
-
-    // Detected beacons
-//    HashMap<String, Double> beacon_detected = new HashMap<>();
-
 
     private MapView mapView;
     private boolean cameraset = false;
@@ -134,70 +133,89 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     double overlap_amount = 0.1;
 
+    double l_distance = 20;
+    double loc1[] = {43.77122467,46.30300847, l_distance};
+    double loc2[] = {40.2213248, 25.34740025, l_distance};
+    double loc3[] = {42.83513801, 51.42698583, l_distance};
+
+
+    double[][] lfinal = {loc1,loc2,loc3};
+
     GoogleMap googleMap;
 
     public double[] triangulate_common_chords(double[][] beacons) {
-        double pos[] = {0, 0};
+        double pos[] = {0,0};
         double x12 = beacons[0][0] - beacons[1][0];
-        double x23 = beacons[1][0] - beacons[3][0];
+        double x23 = beacons[1][0] - beacons[2][0];
         double y12 = beacons[0][1] - beacons[1][1];
-        double y23 = beacons[1][1] - beacons[3][1];
+        double y23 = beacons[1][1] - beacons[2][1];
 
-        double c12 = beacons[0][0] * beacons[0][0] - beacons[1][0] * beacons[1][0] + beacons[0][1] * beacons[0][1] - beacons[1][1] * beacons[1][1] - (beacons[0][2] * beacons[0][2] - beacons[1][2] * beacons[1][2]);
-        double c23 = (beacons[1][0] * beacons[1][0] - beacons[3][0] * beacons[3][0]) + (beacons[1][1] * beacons[1][1] - beacons[3][1] * beacons[3][1]) - (beacons[1][2] * beacons[1][2] - beacons[3][2] * beacons[3][2]);
+        double c12 = beacons[0][0]*beacons[0][0] - beacons[1][0]*beacons[1][0] + beacons[0][1]*beacons[0][1] - beacons[1][1]*beacons[1][1] - (beacons[0][2]*beacons[0][2] - beacons[1][2]*beacons[1][2]);
+        double c23 = (beacons[1][0]*beacons[1][0] - beacons[2][0]*beacons[2][0]) + (beacons[1][1]*beacons[1][1] - beacons[2][1]*beacons[2][1]) - (beacons[1][2]*beacons[1][2] - beacons[2][2]*beacons[2][2]);
 
-        pos[0] = (((x23 / x12) * c12) - c23) / ((2 * (x23 / x12) * y12) - (2 * y23));
-        pos[1] = 1 / x12 * (-y12 * pos[0] + c12 / 2);
+        pos[0] = (((x23/x12)*c12)-c23)/((2*(x23/x12)*y12)-(2*y23));
+        pos[1] = 1/x12 * (-y12*pos[0]+c12/2);
         return pos;
     }
 
     public double[][] prepare_common_chords(double[][] beacons) {
-        double[][] fixed_beacons = beacons;
-        boolean[] overlap_check = {false, false, false};
+
+        double [][] fixed_beacons = beacons;
+        boolean [] overlap_check = {false,false,false};
 
         double r12 = beacons[0][2] + beacons[1][2];
         double r23 = beacons[1][2] + beacons[2][2];
         double r13 = beacons[0][2] + beacons[2][2];
 
-        double length_12 = Math.sqrt((beacons[1][0] - beacons[0][0]) * (beacons[1][0] - beacons[0][0]) + (beacons[1][1] - beacons[0][1]) * (beacons[1][1] - beacons[0][1]));
+        double length_12 = Math.sqrt((beacons[1][0]-beacons[0][0])*(beacons[1][0]-beacons[0][0])+(beacons[1][1]-beacons[0][1])*(beacons[1][1]-beacons[0][1]));
 
-        if (length_12 > r12) {
-            double dist12 = length_12 - r12;
-            fixed_beacons[0][2] += (dist12 + overlap_amount) / 2;
-            fixed_beacons[1][2] += (dist12 + overlap_amount) / 2;
+        if(length_12 > r12){
+            double dist12 = length_12-r12;
+            fixed_beacons[0][2] += (dist12 + overlap_amount)/2;
+            fixed_beacons[1][2] += (dist12 + overlap_amount)/2;
         }
 
-        double length_23 = Math.sqrt((beacons[2][0] - beacons[1][0]) * (beacons[2][0] - beacons[1][0]) + (beacons[2][1] - beacons[1][1]) * (beacons[2][1] - beacons[1][1]));
+        double length_23 = Math.sqrt((beacons[2][0]-beacons[1][0])*(beacons[2][0]-beacons[1][0])+(beacons[2][1]-beacons[1][1])*(beacons[2][1]-beacons[1][1]));
 
-        if (length_23 > r23) {
-            double dist23 = length_23 - r23;
-            fixed_beacons[1][2] += (dist23 + overlap_amount) / 2;
-            fixed_beacons[2][2] += (dist23 + overlap_amount) / 2;
+        if(length_23 > r23){
+            double dist23 = length_23-r23;
+            fixed_beacons[1][2] += (dist23 + overlap_amount)/2;
+            fixed_beacons[2][2] += (dist23 + overlap_amount)/2;
         }
 
-        double length_13 = Math.sqrt((beacons[2][0] - beacons[0][0]) * (beacons[2][0] - beacons[0][0]) + (beacons[2][1] - beacons[0][1]) * (beacons[2][1] - beacons[0][1]));
+        double length_13 = Math.sqrt((beacons[2][0]-beacons[0][0])*(beacons[2][0]-beacons[0][0])+(beacons[2][1]-beacons[0][1])*(beacons[2][1]-beacons[0][1]));
 
-        if (length_13 > r13) {
-            double dist13 = length_13 - r13;
-            fixed_beacons[0][2] += (dist13 + overlap_amount) / 2;
-            fixed_beacons[2][2] += (dist13 + overlap_amount) / 2;
+        if(length_13 > r13){
+            double dist13 = length_13-r13;
+            fixed_beacons[0][2] += (dist13 + overlap_amount)/2;
+            fixed_beacons[2][2] += (dist13 + overlap_amount)/2;
         }
 
         return fixed_beacons;
     }
 
-    public double[] xy_to_coords(double[] xy) {
-        double[] coords = {0, 0};
+    public double[] xy_to_coords(double[] xy){
+        double[] coords = {0,0};
         double c_lat = 1.111206896555222e+05;
         double c_long = 6.799157303370348e+04;
         double long_0 = 6.854982000000000;
         double lat_0 = 52.238976000000000;
 
-        coords[0] = xy[1] / c_lat + lat_0;
-        coords[1] = xy[0] / c_long + long_0;
+        coords[0] = xy[1]/c_lat + lat_0;
+        coords[1] = xy[0]/c_long + long_0;
         return coords;
     }
 
+    public void requestCurrentLocation(){
+        double[][] preparing = prepare_common_chords(lfinal);
+        double[] xy = triangulate_common_chords(preparing);
+        double[] coord = xy_to_coords(xy);
+        lat  = coord[0];
+        longi = coord[1];
+        requested = true;
+
+        Log.d(TAG,"requestCurrentLocation: lat " + lat + "longi" + longi);
+    }
 
     @Override
     public final void onCreate(Bundle savedInstanceState) {
@@ -282,6 +300,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         } else{
             counter_present = false;
         }
+
+        requestCurrentLocation();
     }
 
     // Start button
@@ -289,7 +309,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     public void onClick(View view) {
         // Press button to start application
         Log.d(TAG, "has entered onClick");
-        if (view.equals(startButton) && !reset) {
+        if (view.equals(startButton) && !reset){
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{
                         android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -297,7 +317,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             }
             bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-            if (bluetoothAdapter.isEnabled()) {
+            if (bluetoothAdapter.isEnabled()){
                 StartDetectingBeacons();
                 ListAllBluetoothDevices();
             } else {
@@ -306,7 +326,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 startActivityForResult(ask_bluetooth_enable, 1);
             }
 
-        } else if (view.equals(again) && reset) {
+        } else if (view.equals(again) && reset){
             mapView.setVisibility(View.GONE);
             again.setVisibility(View.GONE);
             introText1.setVisibility(View.VISIBLE);
@@ -319,8 +339,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             try {
                 beaconManager.stopMonitoringBeaconsInRegion(region);
                 Log.d(TAG, "Stop detecting beacons...");
-            } catch (Exception e) {
-                Log.d(TAG, "An error occurred while trying to stop detecting beacons" + e.getMessage());
+            } catch (Exception e){
+                Log.d(TAG, "An error occured while trying to stop detecting beacons" + e.getMessage());
             }
 
             beaconManager.removeAllRangeNotifiers();
@@ -331,7 +351,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     private void ListAllBluetoothDevices() {
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter  = BluetoothAdapter.getDefaultAdapter();
 
         bluetoothAdapter.startDiscovery();
 
@@ -380,7 +400,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             // Start to search for beacons
             beaconManager.startRangingBeaconsInRegion(region);
             Log.d(TAG, "Searching for beacons");
-        } catch (Exception e) {
+        } catch (Exception e){
             Log.d(TAG, "An error occured while trying to search for beacons" + e.getMessage());
         }
 
@@ -452,11 +472,12 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     @Override
     public void onLocationChanged(Location location) {
         if (requested) {
+            if (marker != null){
+                marker.remove();
+            }
             float zoomLevel = 19f;
-            lat = location.getLatitude();
-            longi = location.getLongitude();
+            marker = googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
-            googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
             requested = false;
         }
     }
@@ -533,7 +554,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     }
 
-    public HashMap<String, ArrayList> getData() throws IOException {
+    public HashMap<String,ArrayList> getData() throws IOException{
 
         try {
 
@@ -583,7 +604,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
                 data.put(mac_address, rest);
             }
-        } catch (Exception e) {
+        } catch (Exception e){
             Log.e(TAG, "error in getData: " + e.toString());
         }
         return data;
