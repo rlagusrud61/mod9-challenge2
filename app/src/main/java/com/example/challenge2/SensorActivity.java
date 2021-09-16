@@ -124,6 +124,23 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     GoogleMap googleMap;
 
+    public double[] triangulate_common_chords(double[][] beacons) {
+        double pos[] = {0,0};
+        double x12 = beacons[0][0] - beacons[1][0];
+        double x23 = beacons[1][0] - beacons[3][0];
+        double y12 = beacons[0][1] - beacons[1][1];
+        double y23 = beacons[1][1] - beacons[3][1];
+
+        double c12 = beacons[0][0]*beacons[0][0] - beacons[1][0]*beacons[1][0] + beacons[0][1]*beacons[0][1] - beacons[1][1]*beacons[1][1] - (beacons[0][2]*beacons[0][2] - beacons[1][2]*beacons[1][2]);
+        double c23 = (beacons[1][0]*beacons[1][0] - beacons[3][0]*beacons[3][0]) + (beacons[1][1]*beacons[1][1] - beacons[3][1]*beacons[3][1]) - (beacons[1][2]*beacons[1][2] - beacons[3][2]*beacons[3][2]);
+
+        pos[0] = (((x23/x12)*c12)-c23)/((2*(x23/x12)*y12)-(2*y23));
+        pos[1] = 1/x12 * (-y12*pos[0]+c12/2);
+        return pos;
+    }
+
+
+
     @Override
     public final void onCreate(Bundle savedInstanceState) {
 
@@ -209,6 +226,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         mapView = findViewById(R.id.map);
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
+
     }
 
     // Start button
