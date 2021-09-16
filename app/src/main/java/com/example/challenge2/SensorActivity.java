@@ -58,6 +58,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -256,7 +257,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         mapView = findViewById(R.id.map);
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
-
     }
 
     // Start button
@@ -391,19 +391,13 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG,"onLocationChanged");
         if (requested) {
-            float zoomLevel = 16f;
+            float zoomLevel = 19f;
             lat = location.getLatitude();
             longi = location.getLongitude();
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
             googleMap.addMarker(new MarkerOptions().position(new LatLng(lat,longi)));
-        }
-        if (mapView.getVisibility() == View.VISIBLE){
-            if (!cameraset){
-                float zoomLevel = 20f;
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
-                cameraset=  true;
-            }
+            requested = false;
         }
     }
 
@@ -437,6 +431,27 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         mapView.onEnterAmbient(null);
         map.getUiSettings().setIndoorLevelPickerEnabled(true);
         // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
+
+        googleMap.setOnIndoorStateChangeListener(new GoogleMap.OnIndoorStateChangeListener() {
+            @Override
+            public void onIndoorBuildingFocused() {
+
+            }
+
+            @Override
+            public void onIndoorLevelActivated(IndoorBuilding indoorBuilding) {
+                // From highest to lowest. So 1 = 4, 2 = 3...
+                List<IndoorLevel> levels = indoorBuilding.getLevels();
+                int level = indoorBuilding.getActiveLevelIndex();
+                Log.d("Tag21", "Level Index: " + String.valueOf(level));
+                String currentFloor = levels.get(level).getName();
+                Log.d("Tag21", "Level: " + currentFloor);
+            }
+
+        });
+
+
+
         mapView.setVisibility(GONE);
     }
 
