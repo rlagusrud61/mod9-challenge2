@@ -134,12 +134,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     double overlap_amount = 0.1;
 
     double l_distance = 20;
-    Double x_value1;
-    Double y_value1;
-    Double x_value2;
-    Double y_value2;
-    Double x_value3;
-    Double y_value3;
+
+    double x_value1,x_value2,x_value3,y_value1,y_value2,y_value3;
     double loc1[] = {43.77122467,46.30300847, l_distance};
     double loc2[] = {40.2213248, 25.34740025, l_distance};
     double loc3[] = {42.83513801, 51.42698583, l_distance};
@@ -431,19 +427,14 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         HashMap<String, Double> beaconHashMap = new HashMap<>();
 
         if (beacons.size() != 0) {
-            double tx = 0;
-            double rx = 0;
-            double distance = 0;
+            double tx,rx,distance;
 
             for (Beacon beacon : beacons) {
                 tx = beacon.getTxPower();
                 rx = beacon.getRssi();
                 distance = Math.pow(10, ((tx - rx + C) / (10 * N))); // distance between phone and the beacons (estimate)
-
                 Log.d("Beacon", "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance());
-                //TODO : don't remember to change to beacon_detected
                 beaconHashMap.put(beacon.getBluetoothAddress(), distance);
-
             }
 
             if (beaconHashMap.size() > 3) {
@@ -462,23 +453,36 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                     }
                 }
             }
+            Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
 
-            beaconHashMap.keySet();
-            Log.d(TAG, "Beacon toString()" + beaconHashMap.toString());
+            ArrayList<String> macAddresses = new ArrayList<>();
 
-            try {
-                x_value1 = new Double(getData().get(beaconHashMap.get(0)).get(5).toString());
-                y_value1 = new Double(getData().get(beaconHashMap.get(0)).get(6).toString());
-                x_value2 = new Double(getData().get(beaconHashMap.get(1)).get(5).toString());
-                y_value2 = new Double(getData().get(beaconHashMap.get(1)).get(6).toString());
-                x_value3 = new Double(getData().get(beaconHashMap.get(2)).get(5).toString());
-                y_value3 = new Double(getData().get(beaconHashMap.get(2)).get(6).toString());
+            for (Map.Entry<String,Double> entry : beaconHashMap.entrySet()){
+                try {
+                    if (getData().containsKey(entry.getKey())){ // if mac address is found in the excel sheet
+                        macAddresses.add(entry.getKey());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
+            }
+
+            try{
+
+                x_value1 = new Double(getData().get(beaconHashMap.get(macAddresses.get(0))).get(5).toString());
+                y_value1 = new Double(getData().get(beaconHashMap.get(macAddresses.get(0))).get(6).toString());
+                x_value2 = new Double(getData().get(beaconHashMap.get(macAddresses.get(1))).get(5).toString());
+                y_value2 = new Double(getData().get(beaconHashMap.get(macAddresses.get(1))).get(6).toString());
+                x_value3 = new Double(getData().get(beaconHashMap.get(macAddresses.get(2))).get(5).toString());
+                y_value3 = new Double(getData().get(beaconHashMap.get(macAddresses.get(2))).get(6).toString());
                 Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
                 Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
-            } catch (IOException e) {
+
+            } catch(IOException e){
                 e.printStackTrace();
             }
+
 
 
         } else {
