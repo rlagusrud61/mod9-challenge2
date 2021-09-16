@@ -54,6 +54,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="422dp"
                 android:layout_below="@+id/button"
+                android:visibility="visible"
                 android:layout_marginTop="30sp" />
 
             <ImageButton
@@ -64,8 +65,8 @@
                 android:layout_marginTop="100sp"
                 android:adjustViewBounds="true"
                 android:background="@android:color/transparent"
+                android:onClick="onClickButton"
                 android:cropToPadding="false"
-                android:onClick="onClickEnableOrDisableActivityRecognition"
                 android:scaleType="fitCenter"
                 android:src="@drawable/locationbutton" />
 

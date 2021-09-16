@@ -91,7 +91,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private final String TRANSITIONS_RECEIVER_ACTION =
             BuildConfig.LIBRARY_PACKAGE_NAME + "TRANSITIONS_RECEIVER_ACTION";
     private List<ActivityTransition> activityTransitionList;
-    private TransitionsReceiver transitionsReceiver;
+//    private TransitionsReceiver transitionsReceiver;
     private ActivityRecognitionClient activityRecognitionClient;
 
     private PendingIntent pendingIntent;
@@ -112,8 +112,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    double lat = 52.2393907; // Ravelijn coordinates
-    double longi = 6.8555544; //
+    static final double lat = 52.2393907; // Ravelijn coordinates
+    static final double longi = 6.8555544; //
 
     GoogleMap googleMap;
 
@@ -181,13 +181,13 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
                 .build());
 
-        Intent intent = new Intent(TRANSITIONS_RECEIVER_ACTION);
-        pendingIntent = PendingIntent.getBroadcast(SensorActivity.this, 0, intent, 0);
-
-        // Register a BroadcastReceiver to listen for activity transitions.
-        registerReceiver(transitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
-
-        transitionsReceiver = new TransitionsReceiver();
+//        Intent intent = new Intent(TRANSITIONS_RECEIVER_ACTION);
+//        pendingIntent = PendingIntent.getBroadcast(SensorActivity.this, 0, intent, 0);
+//
+//        // Register a BroadcastReceiver to listen for activity transitions.
+//        registerReceiver(transitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
+//
+//        transitionsReceiver = new TransitionsReceiver();
 
         // ----------------------------------------
 
@@ -222,8 +222,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         } else {
             // Request permission and start activity for result. If the permission is approved, we
             // want to make sure we start activity recognition tracking.
-            Intent startIntent = new Intent(this, PermissionRationalActivity.class);
-            startActivityForResult(startIntent, 0);
+//            Intent startIntent = new Intent(this, PermissionRationalActivity.class);
+//            startActivityForResult(startIntent, 0);
         }
     }
 
@@ -238,16 +238,20 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
         super.onActivityResult(requestCode, resultCode, data);
     }
-
-    // Start button
     @Override
     public void onClick(View view){
+
+    }
+    // Start button
+    public void onClickButton(View view){
         // Press button to start application
         Log.d(TAG, "has entered onClick");
-        onClickEnableOrDisableActivityRecognition(startButton);
-        if (view.equals(startButton) && !running){
+//        onClickEnableOrDisableActivityRecognition(startButton);
+        Log.d(TAG, "mapvisibility : " + mapView.getVisibility());
             if (mapView.getVisibility() == View.VISIBLE) {
+                Log.d(TAG,"si esta visible");
                 float zoomLevel = 20f;
+                googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
             }
 
@@ -266,10 +270,9 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
                 startActivityForResult(ask_bluetooth_enable, 1);
             }
 
-        // Press button to pause application
-        } else if (view.equals(startButton) && running){
+            mapView.setVisibility(View.VISIBLE);
+            Log.d(TAG,"set visibility to visible again");
             StopDetectingBeacons();
-        }
     }
 
     private boolean activityRecognitionPermissionApproved(){
@@ -337,15 +340,30 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         // Change the icon to the pause symbol
         startButton.setImageResource(R.drawable.stop);
 
-        // Change text
-        introText1.setText("Searching for beacons ...");
-        introText2.setText(" ");
 
         // Time to scan for beacons (6 seconds)
         beaconManager.setForegroundBetweenScanPeriod(SCAN_TIME);
 
         // Pair with beacon service
         beaconManager.bind(this);
+
+        // App is not running (stop detecting beacons)
+        running = false;
+
+        // Change the icon to the start symbol
+        startButton.setImageResource(R.drawable.locationbutton);
+
+        // Hide icon and text
+        startButton.setVisibility(View.GONE);
+        introText1.setVisibility(View.GONE);
+        introText2.setVisibility(View.GONE);
+
+        // Show map and Again Button
+
+        mapView.setVisibility(View.VISIBLE);
+        again.setVisibility(View.VISIBLE);
+
+        Log.d(TAG,"mapview set to : " + mapView.getVisibility());
 
     }
 
@@ -383,21 +401,6 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
 
     private void StopDetectingBeacons() {
 
-        // App is not running (stop detecting beacons)
-        running = false;
-
-        // Change the icon to the start symbol
-        startButton.setImageResource(R.drawable.locationbutton);
-
-        // Hide icon and text
-        startButton.setVisibility(View.GONE);
-        introText1.setVisibility(View.GONE);
-        introText2.setVisibility(View.GONE);
-
-        // Show map and Again Button
-        mapView.setVisibility(View.VISIBLE);
-        again.setVisibility(View.VISIBLE);
-
         // Stop the process of detection
         try {
             beaconManager.stopMonitoringBeaconsInRegion(region);
@@ -416,8 +419,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void onLocationChanged(Location location) {
         if (requested) {
-            lat = location.getLatitude();
-            longi = location.getLongitude();
+//            lat = location.getLatitude();
+//            longi = location.getLongitude();
             googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
             requested = false;
         }
@@ -434,7 +437,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         super.onStart();
 
         //Register BroadcastReceiver to listen for activity transitions
-        registerReceiver(transitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
+//        registerReceiver(transitionsReceiver, new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
     }
     @Override
     protected void onResume() {
@@ -448,6 +451,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
             disableActivityTransitions();
         }
         super.onPause();
+        StopDetectingBeacons();
 
     }
 
@@ -456,6 +460,8 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         super.onStop();
         // Unregister activity transition receiver when user leaves the app.
 //        unregisterReceiver(transitionsReceiver);
+
+        StopDetectingBeacons();
     }
 
 
@@ -466,7 +472,7 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         mapView.onResume();
         mapView.onEnterAmbient(null);
         // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
-        mapView.setVisibility(GONE);
+        mapView.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -511,34 +517,34 @@ public class SensorActivity extends FragmentActivity implements OnMapReadyCallba
         }
     }
 
-    public class TransitionsReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            Log.d(TAG, "onReceive(): " + intent);
-
-            if (!TextUtils.equals(TRANSITIONS_RECEIVER_ACTION, intent.getAction())) {
-
-                Log.d(TAG, "Unsupported action received by TransitionsReceiver : " + intent.getAction());
-            }
-
-            // Extract activity transition information from listener.
-            if (ActivityTransitionResult.hasResult(intent)) {
-
-                ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
-
-                for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-
-                    String info = "Transition: " + toActivityString(event.getActivityType()) +
-                            " (" + toTransitionType(event.getTransitionType()) + ")" + "   " +
-                            new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
-
-                    Log.d(TAG, info);
-                }
-            }
-
-        }
-    }
+//    public class TransitionsReceiver extends BroadcastReceiver {
+//
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//
+//            Log.d(TAG, "onReceive(): " + intent);
+//
+//            if (!TextUtils.equals(TRANSITIONS_RECEIVER_ACTION, intent.getAction())) {
+//
+//                Log.d(TAG, "Unsupported action received by TransitionsReceiver : " + intent.getAction());
+//            }
+//
+//            // Extract activity transition information from listener.
+//            if (ActivityTransitionResult.hasResult(intent)) {
+//
+//                ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
+//
+//                for (ActivityTransitionEvent event : result.getTransitionEvents()) {
+//
+//                    String info = "Transition: " + toActivityString(event.getActivityType()) +
+//                            " (" + toTransitionType(event.getTransitionType()) + ")" + "   " +
+//                            new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
+//
+//                    Log.d(TAG, info);
+//                }
+//            }
+//
+//        }
+//    }
 
 };

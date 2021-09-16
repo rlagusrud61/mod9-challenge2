@@ -27,11 +27,6 @@
             android:value="AIzaSyDaGFgtmNx64pdPn3RM4D4thylCWEFG3eM" />
 
 
-        <activity
-            android:name=".PermissionRationalActivity"
-            android:label="PermissionRationalActivity"
-            android:theme="@style/Theme.AppCompat.NoActionBar"/>
-
         <activity android:name=".SensorActivity"
             android:exported="true">
 
