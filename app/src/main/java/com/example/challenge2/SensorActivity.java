@@ -72,7 +72,7 @@ import java.util.Map;
 import static android.view.View.GONE;
 
 // View.OnClickListener, BeaconConsumer, RangeNotifier
-public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener, View.OnClickListener, RangeNotifier, BeaconConsumer, GoogleMap.OnIndoorStateChangeListener {
+public class SensorActivity extends FragmentActivity implements  GoogleMap.OnIndoorStateChangeListener, OnMapReadyCallback, LocationListener, View.OnClickListener, RangeNotifier, BeaconConsumer {
 
     // sending log output TAG
     private static final String TAG = "MyActivity";
@@ -91,13 +91,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private BroadcastReceiver broadcastReceiver;
     private BluetoothAdapter bluetoothAdapter;
 
-    HashMap<String,ArrayList> data = new HashMap<String,ArrayList>();
+    HashMap<String,ArrayList> data = new HashMap<>();
 
-    // Step Counter
-    private SensorManager sensorManager;
-    private Sensor stepcounter;
-    private boolean counter_present;
-    int stepcount = 0;
 
     double altitude;
     // ----------------------------------------
@@ -122,7 +117,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     Boolean reset = false;
 
     private MapView mapView;
-    private boolean cameraset = false;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
     double lat = 52.2392530; // 52.213453
@@ -133,21 +127,13 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     double overlap_amount = 0.1;
 
-    double l_distance = 20;
-
     double x_value1,x_value2,x_value3,y_value1,y_value2,y_value3,l_distance1, l_distance2,l_distance3;
-//    double loc1[] = {43.77122467,46.30300847, l_distance};
-//    double loc2[] = {40.2213248, 25.34740025, l_distance};
-//    double loc3[] = {42.83513801, 51.42698583, l_distance};
-
 
     double loc1[] = {x_value1, y_value1, l_distance1};
     double loc2[] = {x_value2, y_value2, l_distance2};
     double loc3[] = {x_value3, y_value3, l_distance3};
 
     double[][] lfinal = {loc1,loc2,loc3};
-
-    //HashMap<String, Double> beaconHashMap = new HashMap<>();
 
     GoogleMap googleMap;
 
@@ -168,9 +154,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     public double[][] prepare_common_chords(double[][] beacons) {
 
-        double [][] fixed_beacons = beacons;
-        boolean [] overlap_check = {false,false,false};
-
         double r12 = beacons[0][2] + beacons[1][2];
         double r23 = beacons[1][2] + beacons[2][2];
         double r13 = beacons[0][2] + beacons[2][2];
@@ -179,27 +162,27 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
         if(length_12 > r12){
             double dist12 = length_12-r12;
-            fixed_beacons[0][2] += (dist12 + overlap_amount)/2;
-            fixed_beacons[1][2] += (dist12 + overlap_amount)/2;
+            beacons[0][2] += (dist12 + overlap_amount)/2;
+            beacons[1][2] += (dist12 + overlap_amount)/2;
         }
 
         double length_23 = Math.sqrt((beacons[2][0]-beacons[1][0])*(beacons[2][0]-beacons[1][0])+(beacons[2][1]-beacons[1][1])*(beacons[2][1]-beacons[1][1]));
 
         if(length_23 > r23){
             double dist23 = length_23-r23;
-            fixed_beacons[1][2] += (dist23 + overlap_amount)/2;
-            fixed_beacons[2][2] += (dist23 + overlap_amount)/2;
+            beacons[1][2] += (dist23 + overlap_amount)/2;
+            beacons[2][2] += (dist23 + overlap_amount)/2;
         }
 
         double length_13 = Math.sqrt((beacons[2][0]-beacons[0][0])*(beacons[2][0]-beacons[0][0])+(beacons[2][1]-beacons[0][1])*(beacons[2][1]-beacons[0][1]));
 
         if(length_13 > r13){
             double dist13 = length_13-r13;
-            fixed_beacons[0][2] += (dist13 + overlap_amount)/2;
-            fixed_beacons[2][2] += (dist13 + overlap_amount)/2;
+            beacons[0][2] += (dist13 + overlap_amount)/2;
+            beacons[2][2] += (dist13 + overlap_amount)/2;
         }
 
-        return fixed_beacons;
+        return beacons;
     }
 
     public double[] xy_to_coords(double[] xy){
@@ -260,7 +243,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
         try {
             data = this.getData();
-            //Log.d(TAG, "beacon info: " + data.get("529").get(5));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -311,15 +293,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
 
-        // Step counter
-
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)!= null) {
-            stepcounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-            counter_present = true;
-        } else{
-            counter_present = false;
-        }
 
     }
 
@@ -505,6 +478,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
 
                     requestCurrentLocation();
+
 
                     Log.d(TAG, "x_value " +x_value1 + "yvalue " + y_value1 + "distance " + l_distance1);
 
@@ -714,8 +688,12 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     }
 
+    /**
+     * Function that extracts the data needed from the given excel sheet.
+     * @return HashMap<String,ArrayList> data with MAC address as a key, rest of the significant information as ArrayList
+     * @throws IOException
+     */
     public HashMap<String,ArrayList> getData() throws IOException{
-
         try {
 
             InputStream myInput;
@@ -770,17 +748,4 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         return data;
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-        Log.d(TAG,"OnSensorChanged");
-        if (sensorEvent.sensor == stepcounter){
-            stepcount = (int) sensorEvent.values[0];
-            activity.setText(String.valueOf(stepcount));
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
 };

@@ -96,7 +96,7 @@
                 android:background="@android:color/transparent"
                 android:layout_below="@+id/yValue"
                 android:src="@drawable/doitagain"
-                android:text="Do it again" />
+                 />
 
             <TextView
                 android:id="@+id/info_text"
@@ -126,8 +126,6 @@
                 android:textSize="20sp"
                 android:gravity="center"
                 android:layout_marginTop="30sp" />
-
-
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
