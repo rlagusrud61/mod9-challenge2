@@ -122,8 +122,8 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
     double lat = 52.2392530; // 52.213453
     double longi = 6.8554879; // 6.879420
 
-    double N = 4;
-    double C = 0;
+    final double N = 4; //path-los exponent
+    final double C = 0; //device specific gain for rssi
 
     double overlap_amount = 0.1;
 
