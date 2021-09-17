@@ -125,10 +125,10 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private boolean cameraset = false;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    double lat; //52.2392530; // 52.213453
-    double longi; //6.8554879; // 6.879420
+    double lat = 52.2392530; // 52.213453
+    double longi = 6.8554879; // 6.879420
 
-    double N = 2;
+    double N = 4;
     double C = 0;
 
     double overlap_amount = 0.1;
@@ -442,13 +442,82 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 distance = Math.pow(10, ((tx - rx + C) / (10 * N))); // distance between phone and the beacons (estimate)
                 Log.d("Beacon", "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance());
                 beaconHashMap.put(beacon.getBluetoothAddress(), distance);
-                activity.setText("beacon detected : " + beacon.getId1());
+
             }
-            for (Map.Entry<String,Double> entry : beaconHashMap.entrySet()){
+            activity.setText("Number of beacons detected: " + beaconHashMap.size());
+
+            if (beaconHashMap.size() > 3) {
+                int iterations = beaconHashMap.size() - 3; // we want to remove this much
+                Log.d(TAG, "I have " + beaconHashMap.size() + ", so I'm gonna remove " + iterations + " beacons");
+                int removalCounter = 0;
+                while (removalCounter < iterations){
+                    double maxDistanceValue = (Collections.max(beaconHashMap.values())); // get the max distance value
+                    for (Map.Entry<String,Double> entry1 : beaconHashMap.entrySet()){
+                        if (entry1.getValue().equals(maxDistanceValue)){
+                            beaconHashMap.remove(entry1);
+                            Log.d("Removed : " , "I removed this beacon : "  + entry1);
+                            removalCounter++;
+                        }
+                    }
+                }
+
+            }
+            if (beaconHashMap.size() == 3) {
+                Log.d(TAG, "entering hashmap size == 3");
+                Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
+                activity.setText(beaconHashMap.toString());
+                ArrayList<String> macAddresses = new ArrayList<>();
+
+                for (Map.Entry<String, Double> becaconEntry : beaconHashMap.entrySet()) {
+                    macAddresses.add(becaconEntry.getKey());
+                }
+                Log.d(TAG, "macaddresses: " + macAddresses);
+
+                try{
+
+                    x_value1 = new Double(getData().get(macAddresses.get(0)).get(5).toString());
+                    y_value1 = new Double(getData().get(macAddresses.get(0)).get(6).toString());
+                    x_value2 = new Double(getData().get(macAddresses.get(1)).get(5).toString());
+                    y_value2 = new Double(getData().get(macAddresses.get(1)).get(6).toString());
+                    x_value3 = new Double(getData().get(macAddresses.get(2)).get(5).toString());
+                    y_value3 = new Double(getData().get(macAddresses.get(2)).get(6).toString());
+
+                    l_distance1 = beaconHashMap.get(macAddresses.get(0));
+                    l_distance2 = beaconHashMap.get(macAddresses.get(1));
+                    l_distance3 = beaconHashMap.get(macAddresses.get(2));
+
+
+                    lfinal[0][0] = x_value1;
+                    lfinal[0][1] = y_value1;
+                    lfinal[0][2] = l_distance1;
+
+                    lfinal[1][0] = x_value2;
+                    lfinal[1][1] = y_value2;
+                    lfinal[1][2] = l_distance2;
+
+                    lfinal[2][0] = x_value3;
+                    lfinal[2][1] = y_value3;
+                    lfinal[2][2] = l_distance3;
+
+
+                    requestCurrentLocation();
+
+                    Log.d(TAG, "x_value " +x_value1 + "yvalue " + y_value1 + "distance " + l_distance1);
+
+                    //Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
+                    //Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
+
+                } catch(IOException e){
+                    e.printStackTrace();
+                }
+
+            }
+
+
+            /*for (Map.Entry<String,Double> entry : beaconHashMap.entrySet()){
                 Log.d(TAG, "entering for loop");
                 //try {
                     //if (getData().containsKey(entry.getKey())){
-                        //Log.d(TAG, "entering first if");
                         if (beaconHashMap.size() > 3) {
                             Log.d(TAG, "entering hashmap size > 3");
                             int iterations = beaconHashMap.size() - 3; // we want to remove this much
@@ -492,21 +561,18 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                                 l_distance3 = beaconHashMap.get(macAddresses.get(2));
 
 
-                                loc1[0] = x_value1;
-                                loc1[1] = y_value1;
-                                loc1[2] = l_distance1;
+                                lfinal[0][0] = x_value1;
+                                lfinal[0][1] = y_value1;
+                                lfinal[0][2] = l_distance1;
 
-                                loc2[0] = x_value2;
-                                loc2[1] = y_value2;
-                                loc2[2] = l_distance2;
+                                lfinal[1][0] = x_value2;
+                                lfinal[1][1] = y_value2;
+                                lfinal[1][2] = l_distance2;
 
-                                loc3[0] = x_value3;
-                                loc3[1] = y_value3;
-                                loc3[2] = l_distance3;
+                                lfinal[2][0] = x_value3;
+                                lfinal[2][1] = y_value3;
+                                lfinal[2][2] = l_distance3;
 
-                                lfinal[0] = loc1;
-                                lfinal[1] = loc2;
-                                lfinal[2] = loc3;
 
                                 requestCurrentLocation();
 
@@ -525,7 +591,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 //} catch (IOException e) {
                     //e.printStackTrace();
                 //}
-            }
+            }*/
 
         } else {
             Log.d(TAG, "No beacons were detected");
@@ -537,9 +603,9 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     @Override
     public void onLocationChanged(Location location) {
         if (requested) {
-            //if (marker != null){
-              //  marker.remove();
-            //}
+            if (marker != null){
+                marker.remove();
+            }
             Log.d(TAG, "location :" + String.valueOf(new LatLng(lat, longi)));
             float zoomLevel = 19f;
             marker = googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
