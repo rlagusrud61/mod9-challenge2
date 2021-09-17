@@ -103,8 +103,6 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
 
     Marker marker;
 
-    Location location;
-
     // Front-End components
     TextView introText1, introText2, activity, info_text, currentFloor;
     ImageButton startButton, again;
@@ -119,8 +117,8 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
     private MapView mapView;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    double lat = 52.2392530; // 52.213453
-    double longi = 6.8554879; // 6.879420
+    double lat = 52.2392530; // coordinates of Ravelijn
+    double longi = 6.8554879;
 
     final double N = 4; //path-los exponent
     final double C = 0; //device specific gain for rssi
@@ -138,7 +136,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
     GoogleMap googleMap;
 
     public double[] triangulate_common_chords(double[][] beacons) { //triangulate based on 3 beacons and their distances to user. input is 3x3 array with beacon number in first dimension, and x,y,distance in second dimension.
-        double pos[] = {0,0}; //output posititon
+        double pos[] = {0,0}; //output position
         double x12 = beacons[0][0] - beacons[1][0]; //differences between x and y positions used in the triangulation formula
         double x23 = beacons[1][0] - beacons[2][0];
         double y12 = beacons[0][1] - beacons[1][1];
@@ -163,7 +161,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
 
         double length_12 = Math.sqrt((beacons[1][0]-beacons[0][0])*(beacons[1][0]-beacons[0][0])+(beacons[1][1]-beacons[0][1])*(beacons[1][1]-beacons[0][1]));// distance between beacon 1 and 2
 
-        if(length_12 > r12){// if the distance between 1 and 2 is more than the sum of their radii, they dont overlap
+        if(length_12 > r12){// if the distance between 1 and 2 is more than the sum of their radii, they don't overlap
             double dist12 = length_12-r12; // distance between edges of the circles
             fixed_beacons[0][2] += (dist12 + overlap_amount)/2; //add half of the distance + a little bit to make them properly overlap to both beacon distances
             fixed_beacons[1][2] += (dist12 + overlap_amount)/2;
@@ -380,7 +378,6 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
         beaconManager.bind(this);
 
         mapView.setVisibility(View.VISIBLE);
-//        activity.setVisibility(View.GONE);
         again.setVisibility(View.VISIBLE);
         introText1.setVisibility(View.GONE);
         introText2.setVisibility(View.GONE);
