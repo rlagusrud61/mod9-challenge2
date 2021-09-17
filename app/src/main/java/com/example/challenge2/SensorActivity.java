@@ -433,58 +433,63 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 distance = Math.pow(10, ((tx - rx + C) / (10 * N))); // distance between phone and the beacons (estimate)
                 Log.d("Beacon", "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance());
                 beaconHashMap.put(beacon.getBluetoothAddress(), distance);
+                activity.setText("beacon detected : " + beacon.getId1());
             }
+            for (Map.Entry<String,Double> entry : beaconHashMap.entrySet()){
 
-            if (beaconHashMap.size() > 3) {
-                int iterations = beaconHashMap.size() - 3; // we want to remove this much
-                int removalCounter = 0;
-                // de los detected beacons, remover los dos que tienen most distance
-                while (removalCounter < iterations){
-                    //find the maximum one
-                    double maxDistanceValue = (Collections.max(beaconHashMap.values())); // get the max distance value
-                    for (Map.Entry<String,Double> entry : beaconHashMap.entrySet()){
-                        if (entry.getValue().equals(maxDistanceValue)){
-                            beaconHashMap.remove(entry);
-                            Log.d("Removed : " , "I removed this beacon : "  + entry);
-                            removalCounter++;
+                try {
+                    if (getData().containsKey(entry.getKey())){
+                        if (beaconHashMap.size() > 3) {
+                            int iterations = beaconHashMap.size() - 3; // we want to remove this much
+                            Log.d(TAG, "I have " + beaconHashMap.size() + ", so I'm gonna remove " + iterations + " beacons");
+                            int removalCounter = 0;
+                            // de los detected beacons, remover los dos que tienen most distance
+                            while (removalCounter < iterations){
+                                //find the maximum one
+                                double maxDistanceValue = (Collections.max(beaconHashMap.values())); // get the max distance value
+                                for (Map.Entry<String,Double> entry1 : beaconHashMap.entrySet()){
+                                    if (entry1.getValue().equals(maxDistanceValue)){
+                                        beaconHashMap.remove(entry1);
+                                        Log.d("Removed : " , "I removed this beacon : "  + entry1);
+                                        removalCounter++;
+                                    }
+                                }
+                            }
+                        } else if (beaconHashMap.size() == 3) {
+                            Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
+                            activity.setText(beaconHashMap.toString());
+                            ArrayList<String> macAddresses = new ArrayList<>();
+
+                            for (Map.Entry<String, Double> becaconEntry : beaconHashMap.entrySet()) {
+                                macAddresses.add(becaconEntry.getKey());
+                            }
+
+                            try{
+
+                                x_value1 = new Double(getData().get(macAddresses.get(0)).get(5).toString());
+                                y_value1 = new Double(getData().get(macAddresses.get(0)).get(6).toString());
+                                x_value2 = new Double(getData().get(macAddresses.get(1)).get(5).toString());
+                                y_value2 = new Double(getData().get(macAddresses.get(1)).get(6).toString());
+                                x_value3 = new Double(getData().get(macAddresses.get(2)).get(5).toString());
+                                y_value3 = new Double(getData().get(macAddresses.get(2)).get(6).toString());
+
+                                l_distance1 = beaconHashMap.get(macAddresses.get(0));
+                                l_distance2 = beaconHashMap.get(macAddresses.get(1));
+                                l_distance3 = beaconHashMap.get(macAddresses.get(2));
+
+                                Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
+                                Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
+
+                            } catch(IOException e){
+                                e.printStackTrace();
+                            }
+
                         }
+
                     }
-                }
-            } else if (beaconHashMap.size() == 3) {
-                Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
-                ArrayList<String> macAddresses = new ArrayList<>();
-
-                for (Map.Entry<String, Double> entry : beaconHashMap.entrySet()) {
-                    try {
-                        if (getData().containsKey(entry.getKey())) { // if mac address is found in the excel sheet
-                            macAddresses.add(entry.getKey());
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                try{
-
-                    x_value1 = new Double(getData().get(macAddresses.get(0)).get(5).toString());
-                    y_value1 = new Double(getData().get(macAddresses.get(0)).get(6).toString());
-                    x_value2 = new Double(getData().get(macAddresses.get(1)).get(5).toString());
-                    y_value2 = new Double(getData().get(macAddresses.get(1)).get(6).toString());
-                    x_value3 = new Double(getData().get(macAddresses.get(2)).get(5).toString());
-                    y_value3 = new Double(getData().get(macAddresses.get(2)).get(6).toString());
-
-                    l_distance1 = beaconHashMap.get(macAddresses.get(0));
-                    l_distance2 = beaconHashMap.get(macAddresses.get(1));
-                    l_distance3 = beaconHashMap.get(macAddresses.get(2));
-
-                    Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
-                    Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
-
-                } catch(IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
 
         } else {
