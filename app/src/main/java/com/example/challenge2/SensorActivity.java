@@ -382,7 +382,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 if (action.equals(BluetoothDevice.ACTION_FOUND)) {
                     BluetoothDevice bluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     // Todo: Might be an idea to only display the ones you have not found before. check if it already does that
-                    Log.d(TAG, "BLUETOOTH DEVICE FOUND: NAME " + bluetoothDevice.getName() + "WITH MAC ADDRESS: " + bluetoothDevice.getAddress());
+                    //Log.d(TAG, "BLUETOOTH DEVICE FOUND: NAME " + bluetoothDevice.getName() + "WITH MAC ADDRESS: " + bluetoothDevice.getAddress());
                     arrayList.add(bluetoothDevice.getName());
                 }
             }
@@ -434,6 +434,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
 
         HashMap<String, Double> beaconHashMap = new HashMap<>();
+        ArrayList<String> keysToRemove = new ArrayList<>();
 
         if (beacons.size() != 0) {
             double tx,rx,distance;
@@ -453,13 +454,19 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 Log.d(TAG, "I have " + beaconHashMap.size() + ", so I'm gonna remove " + iterations + " beacons");
                 int removalCounter = 0;
                 while (removalCounter < iterations){
+                    Log.d(TAG, "iteration: " + removalCounter);
                     double maxDistanceValue = (Collections.max(beaconHashMap.values())); // get the max distance value
+                    Log.d(TAG, "maxdistancevalue: " + maxDistanceValue);
                     for (Map.Entry<String,Double> entry1 : beaconHashMap.entrySet()){
-                        if (entry1.getValue().equals(maxDistanceValue)){
-                            beaconHashMap.remove(entry1);
-                            Log.d("Removed : " , "I removed this beacon : "  + entry1);
+                        Log.d(TAG, "current entry:" + entry1.getValue());
+                        if (entry1.getValue() == maxDistanceValue){
+                            keysToRemove.add(entry1.getKey());
+                            Log.d(TAG, "I removed this beacon : "  + entry1);
                             removalCounter++;
                         }
+                    }
+                    for(String key : keysToRemove) {
+                        beaconHashMap.remove(key);
                     }
                 }
 
@@ -608,7 +615,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             if (marker != null){
                 marker.remove();
             }
-            Log.d(TAG, "location :" + String.valueOf(new LatLng(lat, longi)));
+            //Log.d(TAG, "location :" + String.valueOf(new LatLng(lat, longi)));
             float zoomLevel = 19f;
             marker = googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));

@@ -78,7 +78,7 @@
             <ImageButton
                 android:id="@+id/again"
                 android:layout_width="400dp"
-                android:layout_height="150dp"
+                android:layout_height="50dp"
                 android:layout_gravity="center"
                 android:scaleType="fitCenter"
                 android:visibility="gone"
