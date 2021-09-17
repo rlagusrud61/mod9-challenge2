@@ -94,6 +94,8 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
     HashMap<String,ArrayList> data = new HashMap<>();
 
 
+    int floor_number;
+
     double altitude;
     // ----------------------------------------
 
@@ -657,18 +659,23 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
                 if (altitude <= 75) {
                     //Floor 1
                     levels.get(4).activate();
+                    floor_number = 1;
                 } else if (altitude < 78.0) {
                     // Floor 2
                     levels.get(3).activate();
+                    floor_number = 2;
                 } else if (altitude <= 82) {
                     //Floor 3
                     levels.get(2).activate();
+                    floor_number = 3;
                 } else if (altitude <= 86) {
                     // Floor 4
                     levels.get(1).activate();
+                    floor_number = 4;
                 } else {
                     // Floor 5
                     levels.get(0).activate();
+                    floor_number = 5;
                 }
             }
         }
