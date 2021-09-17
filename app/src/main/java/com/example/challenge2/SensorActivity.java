@@ -99,6 +99,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private boolean counter_present;
     int stepcount = 0;
 
+    double altitude;
     // ----------------------------------------
 
     private LocationManager locationManager;
@@ -110,7 +111,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     Location location;
 
     // Front-End components
-    TextView introText1, introText2, activity, info_text;
+    TextView introText1, introText2, activity, info_text, currentFloor;
     ImageButton startButton, again;
     LinearLayout linearLayout;
     ListView bluetooth;
@@ -241,6 +242,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
         // Initialize front-end (buttons, text, map...)
         introText1 = findViewById(R.id.introText1);
+        currentFloor = findViewById(R.id.currentFloor);
         introText2 = findViewById(R.id.introText2);
         startButton = findViewById(R.id.startButton);
         again = findViewById(R.id.again);
@@ -406,6 +408,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         again.setVisibility(View.VISIBLE);
         introText1.setVisibility(View.GONE);
         introText2.setVisibility(View.GONE);
+        currentFloor.setVisibility(View.VISIBLE);
         startButton.setVisibility(View.GONE);
         reset = true;
 
@@ -604,6 +607,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
     @Override
     public void onLocationChanged(Location location) {
+        altitude = location.getAltitude();
         if (requested) {
             if (marker != null){
                 marker.remove();
@@ -655,12 +659,36 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
             @Override
             public void onIndoorLevelActivated(IndoorBuilding indoorBuilding) {
+                IndoorBuilding building = googleMap.getFocusedBuilding();
                 // From highest to lowest. So 1 = 4, 2 = 3...
                 List<IndoorLevel> levels = indoorBuilding.getLevels();
                 int level = indoorBuilding.getActiveLevelIndex();
                 Log.d("Tag21", "Level Index: " + String.valueOf(level));
                 String currentFloor = levels.get(level).getName();
                 Log.d("Tag21", "Level: " + currentFloor);
+
+                if(building != null) {
+
+                    if (levels.size() >= 5) {
+                        if (altitude <= 75) {
+                            //Floor 1
+                            levels.get(4).activate();
+                        } else if (altitude < 78.0) {
+                            // Floor 2
+                            levels.get(3).activate();
+                        } else if (altitude <= 82) {
+                            //Floor 3
+                            levels.get(2).activate();
+                        } else if (altitude <= 86) {
+                            // Floor 4
+                            levels.get(1).activate();
+                        } else {
+                            // Floor 5
+                            levels.get(0).activate();
+                        }
+                    }
+                }
+
             }
 
         });
