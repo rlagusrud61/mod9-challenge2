@@ -467,16 +467,16 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
                 try{
 
-                    x_value1 = new Double(getData().get("e2:83:81:47:2c:be").get(5).toString());
-                    y_value1 = new Double(getData().get("e2:83:81:47:2c:be").get(6).toString());
-                    x_value2 = new Double(getData().get("e2:83:81:47:2c:be").get(5).toString());
-                    y_value2 = new Double(getData().get("e2:83:81:47:2c:be").get(6).toString());
-                    x_value3 = new Double(getData().get("e2:83:81:47:2c:be").get(5).toString());
-                    y_value3 = new Double(getData().get("e2:83:81:47:2c:be").get(6).toString());
+                    x_value1 = new Double(getData().get(macAddresses.get(0)).get(5).toString());
+                    y_value1 = new Double(getData().get(macAddresses.get(0)).get(6).toString());
+                    x_value2 = new Double(getData().get(macAddresses.get(1)).get(5).toString());
+                    y_value2 = new Double(getData().get(macAddresses.get(1)).get(6).toString());
+                    x_value3 = new Double(getData().get(macAddresses.get(2)).get(5).toString());
+                    y_value3 = new Double(getData().get(macAddresses.get(2)).get(6).toString());
 
-                    l_distance1 = beaconHashMap.get(0);
-                    l_distance2 = beaconHashMap.get(1);
-                    l_distance3 = beaconHashMap.get(2);
+                    l_distance1 = beaconHashMap.get(macAddresses.get(0));
+                    l_distance2 = beaconHashMap.get(macAddresses.get(1));
+                    l_distance3 = beaconHashMap.get(macAddresses.get(2));
 
                     Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
                     Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
