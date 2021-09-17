@@ -125,8 +125,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     private boolean cameraset = false;
     private static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
 
-    double lat = 0; // 52.213453
-    double longi = 0; // 6.879420
+    double lat = 52.2392530; // 52.213453
+    double longi = 6.8554879; // 6.879420
 
     double N = 2;
     double C = 0;
@@ -391,7 +391,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         beaconManager.bind(this);
 
         mapView.setVisibility(View.VISIBLE);
-        activity.setVisibility(View.GONE);
+//        activity.setVisibility(View.GONE);
         again.setVisibility(View.VISIBLE);
         introText1.setVisibility(View.GONE);
         introText2.setVisibility(View.GONE);
@@ -450,46 +450,46 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                         }
                     }
                 }
-            }
-            Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
+            } else if (beaconHashMap.size() == 3) {
+                Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
+                ArrayList<String> macAddresses = new ArrayList<>();
 
-            ArrayList<String> macAddresses = new ArrayList<>();
-
-            for (Map.Entry<String,Double> entry : beaconHashMap.entrySet()){
-                try {
-                    if (getData().containsKey(entry.getKey())){ // if mac address is found in the excel sheet
-                        macAddresses.add(entry.getKey());
+                for (Map.Entry<String, Double> entry : beaconHashMap.entrySet()) {
+                    try {
+                        if (getData().containsKey(entry.getKey())) { // if mac address is found in the excel sheet
+                            macAddresses.add(entry.getKey());
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                } catch (IOException e) {
+
+                }
+
+                try{
+
+                    x_value1 = new Double(getData().get("e2:83:81:47:2c:be").get(5).toString());
+                    y_value1 = new Double(getData().get("e2:83:81:47:2c:be").get(6).toString());
+                    x_value2 = new Double(getData().get("e2:83:81:47:2c:be").get(5).toString());
+                    y_value2 = new Double(getData().get("e2:83:81:47:2c:be").get(6).toString());
+                    x_value3 = new Double(getData().get("e2:83:81:47:2c:be").get(5).toString());
+                    y_value3 = new Double(getData().get("e2:83:81:47:2c:be").get(6).toString());
+
+                    l_distance1 = beaconHashMap.get(0);
+                    l_distance2 = beaconHashMap.get(1);
+                    l_distance3 = beaconHashMap.get(2);
+
+                    Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
+                    Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
+
+                } catch(IOException e){
                     e.printStackTrace();
                 }
 
             }
 
-            try{
-
-                x_value1 = new Double(getData().get(beaconHashMap.get(macAddresses.get(0))).get(5).toString());
-                y_value1 = new Double(getData().get(beaconHashMap.get(macAddresses.get(0))).get(6).toString());
-                x_value2 = new Double(getData().get(beaconHashMap.get(macAddresses.get(1))).get(5).toString());
-                y_value2 = new Double(getData().get(beaconHashMap.get(macAddresses.get(1))).get(6).toString());
-                x_value3 = new Double(getData().get(beaconHashMap.get(macAddresses.get(2))).get(5).toString());
-                y_value3 = new Double(getData().get(beaconHashMap.get(macAddresses.get(2))).get(6).toString());
-
-                l_distance1 = beaconHashMap.get(0);
-                l_distance2 = beaconHashMap.get(1);
-                l_distance3 = beaconHashMap.get(2);
-
-                Log.d(TAG, "x value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(5));
-                Log.d(TAG, "y value of MAC e2:83:81:47:2c:be :" + getData().get("e2:83:81:47:2c:be").get(6));
-
-            } catch(IOException e){
-                e.printStackTrace();
-            }
-
-
-
         } else {
             Log.d(TAG, "No beacons were detected");
+            activity.setText("You need at least 3 beacons to locate yourself");
         }
 
     }
