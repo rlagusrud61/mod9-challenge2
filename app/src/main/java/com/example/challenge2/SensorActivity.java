@@ -137,62 +137,65 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
 
     GoogleMap googleMap;
 
-    public double[] triangulate_common_chords(double[][] beacons) {
-        double pos[] = {0,0};
-        double x12 = beacons[0][0] - beacons[1][0];
+    public double[] triangulate_common_chords(double[][] beacons) { //triangulate based on 3 beacons and their distances to user. input is 3x3 array with beacon number in first dimension, and x,y,distance in second dimension.
+        double pos[] = {0,0}; //output posititon
+        double x12 = beacons[0][0] - beacons[1][0]; //differences between x and y positions used in the triangulation formula
         double x23 = beacons[1][0] - beacons[2][0];
         double y12 = beacons[0][1] - beacons[1][1];
         double y23 = beacons[1][1] - beacons[2][1];
 
-        double c12 = beacons[0][0]*beacons[0][0] - beacons[1][0]*beacons[1][0] + beacons[0][1]*beacons[0][1] - beacons[1][1]*beacons[1][1] - (beacons[0][2]*beacons[0][2] - beacons[1][2]*beacons[1][2]);
+        double c12 = beacons[0][0]*beacons[0][0] - beacons[1][0]*beacons[1][0] + beacons[0][1]*beacons[0][1] - beacons[1][1]*beacons[1][1] - (beacons[0][2]*beacons[0][2] - beacons[1][2]*beacons[1][2]); //also used in triangulation formula
         double c23 = (beacons[1][0]*beacons[1][0] - beacons[2][0]*beacons[2][0]) + (beacons[1][1]*beacons[1][1] - beacons[2][1]*beacons[2][1]) - (beacons[1][2]*beacons[1][2] - beacons[2][2]*beacons[2][2]);
 
-        pos[0] = (((x23/x12)*c12)-c23)/((2*(x23/x12)*y12)-(2*y23));
-        pos[1] = 1/x12 * (-y12*pos[0]+c12/2);
+        pos[0] = (((x23/x12)*c12)-c23)/((2*(x23/x12)*y12)-(2*y23)); // x position
+        pos[1] = 1/x12 * (-y12*pos[0]+c12/2); // y position
         return pos;
     }
 
-    public double[][] prepare_common_chords(double[][] beacons) {
+    public double[][] prepare_common_chords(double[][] beacons) {// function is called before triangulation to make sure the circles made by the beacons are all overlapping with each other. takes in same 3x3 array as triangulation
 
-        double r12 = beacons[0][2] + beacons[1][2];
+        double [][] fixed_beacons = beacons; //output array
+        boolean [] overlap_check = {false,false,false}; // array with checks for overlap
+
+        double r12 = beacons[0][2] + beacons[1][2];// sums of radii of the circles
         double r23 = beacons[1][2] + beacons[2][2];
         double r13 = beacons[0][2] + beacons[2][2];
 
-        double length_12 = Math.sqrt((beacons[1][0]-beacons[0][0])*(beacons[1][0]-beacons[0][0])+(beacons[1][1]-beacons[0][1])*(beacons[1][1]-beacons[0][1]));
+        double length_12 = Math.sqrt((beacons[1][0]-beacons[0][0])*(beacons[1][0]-beacons[0][0])+(beacons[1][1]-beacons[0][1])*(beacons[1][1]-beacons[0][1]));// distance between beacon 1 and 2
 
-        if(length_12 > r12){
-            double dist12 = length_12-r12;
-            beacons[0][2] += (dist12 + overlap_amount)/2;
-            beacons[1][2] += (dist12 + overlap_amount)/2;
+        if(length_12 > r12){// if the distance between 1 and 2 is more than the sum of their radii, they dont overlap
+            double dist12 = length_12-r12; // distance between edges of the circles
+            fixed_beacons[0][2] += (dist12 + overlap_amount)/2; //add half of the distance + a little bit to make them properly overlap to both beacon distances
+            fixed_beacons[1][2] += (dist12 + overlap_amount)/2;
         }
 
-        double length_23 = Math.sqrt((beacons[2][0]-beacons[1][0])*(beacons[2][0]-beacons[1][0])+(beacons[2][1]-beacons[1][1])*(beacons[2][1]-beacons[1][1]));
+        double length_23 = Math.sqrt((beacons[2][0]-beacons[1][0])*(beacons[2][0]-beacons[1][0])+(beacons[2][1]-beacons[1][1])*(beacons[2][1]-beacons[1][1])); //same thing as before but with beacons 2 and 3
 
         if(length_23 > r23){
             double dist23 = length_23-r23;
-            beacons[1][2] += (dist23 + overlap_amount)/2;
-            beacons[2][2] += (dist23 + overlap_amount)/2;
+            fixed_beacons[1][2] += (dist23 + overlap_amount)/2;
+            fixed_beacons[2][2] += (dist23 + overlap_amount)/2;
         }
 
-        double length_13 = Math.sqrt((beacons[2][0]-beacons[0][0])*(beacons[2][0]-beacons[0][0])+(beacons[2][1]-beacons[0][1])*(beacons[2][1]-beacons[0][1]));
+        double length_13 = Math.sqrt((beacons[2][0]-beacons[0][0])*(beacons[2][0]-beacons[0][0])+(beacons[2][1]-beacons[0][1])*(beacons[2][1]-beacons[0][1]));//same thing but with beacons 1 and 3
 
         if(length_13 > r13){
             double dist13 = length_13-r13;
-            beacons[0][2] += (dist13 + overlap_amount)/2;
-            beacons[2][2] += (dist13 + overlap_amount)/2;
+            fixed_beacons[0][2] += (dist13 + overlap_amount)/2;
+            fixed_beacons[2][2] += (dist13 + overlap_amount)/2;
         }
 
-        return beacons;
+        return fixed_beacons;
     }
 
-    public double[] xy_to_coords(double[] xy){
+    public double[] xy_to_coords(double[] xy){ //converts the xy coordinates used in triangulation to global coordinates for use on a map. conversion is an estimate
         double[] coords = {0,0};
-        double c_lat = 1.111206896555222e+05;
-        double c_long = 6.799157303370348e+04;
-        double long_0 = 6.854982000000000;
-        double lat_0 = 52.238976000000000;
+        final double c_lat = 1.111206896555222e+05; //first two are constants for converting both x and y to long and lat
+        final double c_long = 6.799157303370348e+04;
+        final double long_0 = 6.854982000000000;//these two are the coordinates of the origin of the xy plane
+        final double lat_0 = 52.238976000000000;
 
-        coords[0] = xy[1]/c_lat + lat_0;
+        coords[0] = xy[1]/c_lat + lat_0; //calculate coordinates
         coords[1] = xy[0]/c_long + long_0;
 
         return coords;
@@ -357,7 +360,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
                 if (action.equals(BluetoothDevice.ACTION_FOUND)) {
                     BluetoothDevice bluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     // Todo: Might be an idea to only display the ones you have not found before. check if it already does that
-                    Log.d(TAG, "BLUETOOTH DEVICE FOUND: NAME " + bluetoothDevice.getName() + "WITH MAC ADDRESS: " + bluetoothDevice.getAddress());
+                    //Log.d(TAG, "BLUETOOTH DEVICE FOUND: NAME " + bluetoothDevice.getName() + "WITH MAC ADDRESS: " + bluetoothDevice.getAddress());
                     arrayList.add(bluetoothDevice.getName());
                 }
             }
@@ -410,6 +413,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
 
         HashMap<String, Double> beaconHashMap = new HashMap<>();
+        ArrayList<String> keysToRemove = new ArrayList<>();
 
         if (beacons.size() != 0) {
             double tx,rx,distance;
@@ -429,13 +433,19 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
                 Log.d(TAG, "I have " + beaconHashMap.size() + ", so I'm gonna remove " + iterations + " beacons");
                 int removalCounter = 0;
                 while (removalCounter < iterations){
+                    Log.d(TAG, "iteration: " + removalCounter);
                     double maxDistanceValue = (Collections.max(beaconHashMap.values())); // get the max distance value
+                    Log.d(TAG, "maxdistancevalue: " + maxDistanceValue);
                     for (Map.Entry<String,Double> entry1 : beaconHashMap.entrySet()){
-                        if (entry1.getValue().equals(maxDistanceValue)){
-                            beaconHashMap.remove(entry1);
-                            Log.d("Removed : " , "I removed this beacon : "  + entry1);
+                        Log.d(TAG, "current entry:" + entry1.getValue());
+                        if (entry1.getValue() == maxDistanceValue){
+                            keysToRemove.add(entry1.getKey());
+                            Log.d(TAG, "I removed this beacon : "  + entry1);
                             removalCounter++;
                         }
+                    }
+                    for(String key : keysToRemove) {
+                        beaconHashMap.remove(key);
                     }
                 }
 
@@ -586,7 +596,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
             if (marker != null){
                 marker.remove();
             }
-            Log.d(TAG, "location :" + String.valueOf(new LatLng(lat, longi)));
+            //Log.d(TAG, "location :" + String.valueOf(new LatLng(lat, longi)));
             float zoomLevel = 19f;
             marker = googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, longi)));
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, longi), zoomLevel));
