@@ -110,9 +110,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
     Location location;
 
     // Front-End components
-    TextView introText1, introText2, activity;
-    ImageButton startButton;
-    Button again;
+    TextView introText1, introText2, activity, info_text;
+    ImageButton startButton, again;
     LinearLayout linearLayout;
     ListView bluetooth;
 
@@ -247,7 +246,9 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         again = findViewById(R.id.again);
         linearLayout = findViewById(R.id.layout);
         activity = findViewById(R.id.activity);
-        activity.setText("0");
+        info_text = findViewById(R.id.info_text);
+
+
         bluetooth = findViewById(R.id.bluetooth);
 
         startButton.setOnClickListener(this);
@@ -349,6 +350,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             introText2.setVisibility(View.VISIBLE);
             startButton.setVisibility(View.VISIBLE);
             activity.setVisibility(View.VISIBLE);
+            info_text.setVisibility(View.VISIBLE);
             reset = false;
 
             // Stop the process of detection
@@ -444,7 +446,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 beaconHashMap.put(beacon.getBluetoothAddress(), distance);
 
             }
-            activity.setText("Number of beacons detected: " + beaconHashMap.size());
+            info_text.setText("Number of beacons detected: " + beaconHashMap.size());
 
             if (beaconHashMap.size() > 3) {
                 int iterations = beaconHashMap.size() - 3; // we want to remove this much
@@ -465,7 +467,6 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
             if (beaconHashMap.size() == 3) {
                 Log.d(TAG, "entering hashmap size == 3");
                 Log.d(TAG, "BeaconHashMap toString(): " + beaconHashMap.toString());
-                activity.setText(beaconHashMap.toString());
                 ArrayList<String> macAddresses = new ArrayList<>();
 
                 for (Map.Entry<String, Double> becaconEntry : beaconHashMap.entrySet()) {
