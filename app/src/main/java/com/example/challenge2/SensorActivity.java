@@ -72,7 +72,7 @@ import java.util.Map;
 import static android.view.View.GONE;
 
 // View.OnClickListener, BeaconConsumer, RangeNotifier
-public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener, View.OnClickListener, RangeNotifier, BeaconConsumer {
+public class SensorActivity extends FragmentActivity implements SensorEventListener, OnMapReadyCallback, LocationListener, View.OnClickListener, RangeNotifier, BeaconConsumer, GoogleMap.OnIndoorStateChangeListener {
 
     // sending log output TAG
     private static final String TAG = "MyActivity";
@@ -651,50 +651,48 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
         map.getUiSettings().setIndoorLevelPickerEnabled(true);
         // This view is invisible, but it still takes up space for layout purposes. Otherwise use GONE
 
-        googleMap.setOnIndoorStateChangeListener(new GoogleMap.OnIndoorStateChangeListener() {
-            @Override
-            public void onIndoorBuildingFocused() {
-
-            }
-
-            @Override
-            public void onIndoorLevelActivated(IndoorBuilding indoorBuilding) {
-                IndoorBuilding building = googleMap.getFocusedBuilding();
-                // From highest to lowest. So 1 = 4, 2 = 3...
-                List<IndoorLevel> levels = indoorBuilding.getLevels();
-                int level = indoorBuilding.getActiveLevelIndex();
-                Log.d("Tag21", "Level Index: " + String.valueOf(level));
-                String currentFloor = levels.get(level).getName();
-                Log.d("Tag21", "Level: " + currentFloor);
-
-                if(building != null) {
-
-                    if (levels.size() >= 5) {
-                        if (altitude <= 75) {
-                            //Floor 1
-                            levels.get(4).activate();
-                        } else if (altitude < 78.0) {
-                            // Floor 2
-                            levels.get(3).activate();
-                        } else if (altitude <= 82) {
-                            //Floor 3
-                            levels.get(2).activate();
-                        } else if (altitude <= 86) {
-                            // Floor 4
-                            levels.get(1).activate();
-                        } else {
-                            // Floor 5
-                            levels.get(0).activate();
-                        }
-                    }
-                }
-
-            }
-
-        });
+        googleMap.setOnIndoorStateChangeListener(this);
 
         mapView.setVisibility(GONE);
     }
+
+    @Override
+    public void onIndoorBuildingFocused() {
+    }
+
+    @Override
+    public void onIndoorLevelActivated(IndoorBuilding indoorBuilding){
+        IndoorBuilding building = googleMap.getFocusedBuilding();
+        // From highest to lowest. So 1 = 4, 2 = 3...
+        List<IndoorLevel> levels = indoorBuilding.getLevels();
+        int level = indoorBuilding.getActiveLevelIndex();
+        Log.d("Tag21", "Level Index: " + String.valueOf(level));
+        String currentFloor = levels.get(level).getName();
+        Log.d("Tag21", "Level: " + currentFloor);
+
+        if(building != null) {
+
+            if (levels.size() >= 5) {
+                if (altitude <= 75) {
+                    //Floor 1
+                    levels.get(4).activate();
+                } else if (altitude < 78.0) {
+                    // Floor 2
+                    levels.get(3).activate();
+                } else if (altitude <= 82) {
+                    //Floor 3
+                    levels.get(2).activate();
+                } else if (altitude <= 86) {
+                    // Floor 4
+                    levels.get(1).activate();
+                } else {
+                    // Floor 5
+                    levels.get(0).activate();
+                }
+            }
+        }
+    }
+
 
     @Override
     public void onProviderEnabled(String provider) {
