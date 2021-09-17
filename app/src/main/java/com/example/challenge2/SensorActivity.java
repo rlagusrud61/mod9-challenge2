@@ -442,7 +442,7 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
                 tx = beacon.getTxPower();
                 rx = beacon.getRssi();
                 distance = Math.pow(10, ((tx - rx + C) / (10 * N))); // distance between phone and the beacons (estimate)
-                Log.d("Beacon", "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance());
+                Log.d(TAG, "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance());
                 beaconHashMap.put(beacon.getBluetoothAddress(), distance);
 
             }
@@ -596,7 +596,8 @@ public class SensorActivity extends FragmentActivity implements SensorEventListe
 
         } else {
             Log.d(TAG, "No beacons were detected");
-            activity.setText("You need at least 3 beacons to locate yourself");
+            introText1.setVisibility(View.VISIBLE);
+            introText1.setText("You need at least 3 beacons to locate yourself");
         }
 
     }
