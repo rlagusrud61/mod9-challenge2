@@ -124,6 +124,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
 
     final double N = 4; //path-los exponent
     final double C = 0; //device specific gain for rssi
+    final double floorHeight = 3.5;
 
     double overlap_amount = 0.1;
 
@@ -413,6 +414,7 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
 
         HashMap<String, Double> beaconHashMap = new HashMap<>();
         ArrayList<String> keysToRemove = new ArrayList<>();
+        double beaconHeight = 0;
 
         if (beacons.size() != 0) {
             double tx,rx,distance;
@@ -420,10 +422,17 @@ public class SensorActivity extends FragmentActivity implements  GoogleMap.OnInd
             for (Beacon beacon : beacons) {
                 tx = beacon.getTxPower();
                 rx = beacon.getRssi();
+                try {
+                beaconHeight = (floor_number - Integer.parseInt(getData().get(beacon.getBluetoothAddress()).get(4).toString()))*floorHeight;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 distance = Math.pow(10, ((tx - rx + C) / (10 * N))); // distance between phone and the beacons (estimate)
+                Log.d(TAG, "distance before height compensation:" + distance );
+                distance = Math.sqrt(distance*distance + beaconHeight*beaconHeight);
+                Log.d(TAG, "distance after height compensation: " + distance);
                 Log.d(TAG, "Beacon detected: " + beacon + "With RSSI: " + beacon.getRssi() + "With transmission power : " + beacon.getTxPower() + "Distance suggested from library: " + beacon.getDistance());
                 beaconHashMap.put(beacon.getBluetoothAddress(), distance);
-
             }
             info_text.setText("Number of beacons detected: " + beaconHashMap.size());
 
